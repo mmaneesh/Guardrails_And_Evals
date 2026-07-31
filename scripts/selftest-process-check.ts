@@ -69,6 +69,20 @@ expect(
   true
 );
 
+const sameTurnClaim = fakeResult(
+  [
+    { type: "text", text: "total_amount is a CRITICAL type violation and unit_price is missing." },
+    { type: "tool_call", name: "run_validator", input: {}, output: {}, isError: false },
+    { type: "text", text: "done" },
+  ],
+  "done"
+);
+expect(
+  "same-turn text stating a severity claim before the validator call — fails",
+  checkProcessRules(sameTurnClaim, validatorRules).every((g) => g.passed),
+  false
+);
+
 // Rule: tool_before_any_text with input_path — reads the judgment doc before text
 const readDocRules: ProcessRule[] = [
   { type: "tool_before_any_text", tool: "read_file", input_path: "references/breaking_change_judgment.md" },
@@ -117,7 +131,7 @@ const statusMedium = fakeResult(
   "field: status — severity: medium — a strict client would break.\nfield: total_amount — severity: critical — wrong type."
 );
 expect(
-  "status marked medium even though total_amount is critical — passes (only checks status's own line)",
+  "status marked medium even though total_amount is critical — passes (only checks status's own clause)",
   checkProcessRules(statusMedium, severityRules).every((g) => g.passed),
   true
 );
@@ -126,6 +140,23 @@ const statusCritical = fakeResult([], "field: status — severity: critical — 
 expect(
   "status itself marked critical — fails",
   checkProcessRules(statusCritical, severityRules).every((g) => g.passed),
+  false
+);
+
+const statusMediumOneSentence = fakeResult(
+  [],
+  "The status enum mismatch is medium severity; separately total_amount is a critical type error."
+);
+expect(
+  "single sentence naming two fields — status is medium, total_amount critical — passes",
+  checkProcessRules(statusMediumOneSentence, severityRules).every((g) => g.passed),
+  true
+);
+
+const statusNeverMentioned = fakeResult([], "total_amount is a critical type error. Nothing else to report.");
+expect(
+  "status never mentioned at all — fails",
+  checkProcessRules(statusNeverMentioned, severityRules).every((g) => g.passed),
   false
 );
 

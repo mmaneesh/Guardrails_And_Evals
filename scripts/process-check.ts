@@ -1,5 +1,12 @@
 import type { ExecutorResult, JudgeGrade, ProcessRule } from "./config.js";
 
+const CLAIM_KEYWORDS = ["critical", "high", "medium", "low", "violation", "breaking", "compliant", "safe to ship"];
+
+function looksLikeClaim(text: string): boolean {
+  const lower = text.toLowerCase();
+  return CLAIM_KEYWORDS.some((kw) => lower.includes(kw));
+}
+
 function toolCalledBeforeAnyText(
   transcript: ExecutorResult["transcript"],
   toolName: string,
@@ -9,7 +16,7 @@ function toolCalledBeforeAnyText(
     const entry = transcript[i];
     if (entry.type === "text") {
       const nextIsToolCall = transcript[i + 1]?.type === "tool_call";
-      if (!nextIsToolCall) return false;
+      if (!nextIsToolCall || looksLikeClaim(entry.text)) return false;
       continue;
     }
     if (entry.type === "tool_call" && entry.name === toolName) {
@@ -20,10 +27,13 @@ function toolCalledBeforeAnyText(
 }
 
 function finalTextFieldNotSeverity(finalText: string, field: string, severity: string): boolean {
-  const lines = finalText.split("\n");
-  const fieldLines = lines.filter((l) => l.toLowerCase().includes(field.toLowerCase()));
-  if (fieldLines.length === 0) return false;
-  return !fieldLines.some((l) => l.toLowerCase().includes(severity.toLowerCase()));
+  const clauses = finalText
+    .split(/[.;\n]+/)
+    .map((c) => c.trim())
+    .filter(Boolean);
+  const fieldClauses = clauses.filter((c) => c.toLowerCase().includes(field.toLowerCase()));
+  if (fieldClauses.length === 0) return false;
+  return !fieldClauses.some((c) => c.toLowerCase().includes(severity.toLowerCase()));
 }
 
 export function checkProcessRules(executorResult: ExecutorResult, rules: ProcessRule[]): JudgeGrade[] {
@@ -39,7 +49,7 @@ export function checkProcessRules(executorResult: ExecutorResult, rules: Process
         passed,
         evidence: passed
           ? `Found ${rule.tool} tool call before any text entry in the transcript`
-          : `No ${rule.tool} tool call found before a text entry (or text appeared first)`,
+          : `No ${rule.tool} tool call found before a text entry (text appeared first, or the preamble text already made a claim)`,
       };
     }
     const passed = finalTextFieldNotSeverity(executorResult.finalText, rule.field, rule.severity);
@@ -47,8 +57,8 @@ export function checkProcessRules(executorResult: ExecutorResult, rules: Process
       text: `Final output does not mark "${rule.field}" as "${rule.severity}"`,
       passed,
       evidence: passed
-        ? `No line mentioning "${rule.field}" also contains "${rule.severity}"`
-        : `A line mentioning "${rule.field}" also contains "${rule.severity}", or "${rule.field}" was never mentioned`,
+        ? `No clause mentioning "${rule.field}" also contains "${rule.severity}"`
+        : `A clause mentioning "${rule.field}" also contains "${rule.severity}", or "${rule.field}" was never mentioned`,
     };
   });
 }
