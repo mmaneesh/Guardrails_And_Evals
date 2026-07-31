@@ -8,6 +8,7 @@
     "validate": "tsx scripts/validate-schema.ts",
     "validate:selftest": "tsx scripts/selftest-validator.ts",
     "selftest:structural": "tsx scripts/selftest-structural-check.ts",
+    "selftest:process": "tsx scripts/selftest-process-check.ts",
     "run-evals": "tsx scripts/run-evals.ts"
   },
   "dependencies": {
