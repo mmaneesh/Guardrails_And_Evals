@@ -32,6 +32,27 @@ const expectations: Expectation[] = [
     enumMismatches: 0,
     undocumented: 1,
   },
+  {
+    label: "enum-only fixture (order_response_enum_only.json)",
+    response: "evals/files/order_response_enum_only.json",
+    structural: 0,
+    enumMismatches: 1,
+    undocumented: 0,
+  },
+  {
+    label: "undocumented-only fixture (order_response_undocumented_only.json)",
+    response: "evals/files/order_response_undocumented_only.json",
+    structural: 0,
+    enumMismatches: 0,
+    undocumented: 1,
+  },
+  {
+    label: "optional-absent fixture (order_response_optional_absent.json)",
+    response: "evals/files/order_response_optional_absent.json",
+    structural: 0,
+    enumMismatches: 0,
+    undocumented: 0,
+  },
 ];
 
 let failed = false;
