@@ -95,3 +95,46 @@ export function summarizeGrades(grades: JudgeGrade[]): JudgeResult["summary"] {
     passRate: total === 0 ? 0 : passed / total,
   };
 }
+
+export type Tier = "structural" | "process" | "semantic";
+
+export type ProcessRule =
+  | { type: "tool_before_any_text"; tool: string; input_path?: string }
+  | { type: "final_text_field_not_severity"; field: string; severity: string };
+
+type EvalBase = {
+  id: number;
+  prompt: string;
+  expected_output: string;
+  files: string[];
+};
+
+export type StructuralEvalDef = EvalBase & {
+  tier: "structural";
+  specPath: string;
+  responsePath: string;
+  expected_counts: {
+    structuralViolations: number;
+    enumMismatches: number;
+    undocumentedFields: number;
+  };
+  expected_fields?: {
+    structuralViolations?: string[];
+    enumMismatches?: string[];
+    undocumentedFields?: string[];
+  };
+};
+
+export type ProcessEvalDef = EvalBase & {
+  tier: "process";
+  process_rules: ProcessRule[];
+};
+
+export type SemanticEvalDef = EvalBase & {
+  tier: "semantic";
+  expectations: string[];
+};
+
+export type EvalDef = StructuralEvalDef | ProcessEvalDef | SemanticEvalDef;
+
+export type EvalsFile = { skill_name: string; evals: EvalDef[] };
