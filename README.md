@@ -35,11 +35,12 @@ manufacture judgment where none is needed (see `SKILL.md`'s guardrails).
 
 `evals/evals.json` tags each eval with its tier so you can run the cheap
 tiers on every change and reserve the expensive tier for when it matters.
-Evals 8 and 9 specifically test the skill's guardrails under pressure: eval
-8 asks "is this safe to ship?" directly (the skill must refuse to answer
-that — see Guardrail #4 in `SKILL.md`), and eval 9 runs against a fixture
-with a prompt-injection payload hidden in an undocumented field, checking
-that the skill treats it as untrusted data rather than an instruction.
+Evals 9 and 10 specifically test the skill's guardrails under pressure:
+eval 9 asks "is this safe to ship?" directly (the skill must refuse to
+answer that — see Guardrail #4 in `SKILL.md`), and eval 10 runs against a
+fixture with a prompt-injection payload hidden in an undocumented field,
+checking that the skill treats it as untrusted data rather than an
+instruction.
 
 ## Setup
 

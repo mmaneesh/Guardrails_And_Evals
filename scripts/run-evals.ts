@@ -2,26 +2,19 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { runExecutor } from "./executor.js";
 import { runJudge } from "./judge.js";
+import { runStructuralCheck } from "./structural-check.js";
+import { checkProcessRules } from "./process-check.js";
 import {
   EXECUTOR_MODEL,
   JUDGE_MODEL,
   addUsage,
   emptyUsage,
   estimateCostUsd,
+  summarizeGrades,
+  type EvalsFile,
+  type JudgeGrade,
+  type Tier,
 } from "./config.js";
-
-type Tier = "structural" | "process" | "semantic";
-
-type EvalDef = {
-  id: number;
-  tier: Tier;
-  prompt: string;
-  expected_output: string;
-  files: string[];
-  expectations: string[];
-};
-
-type EvalsFile = { skill_name: string; evals: EvalDef[] };
 
 function parseArgs(argv: string[]): { tier: Tier | "all"; maxCostUsd?: number } {
   let tier: Tier | "all" = "all";
@@ -97,6 +90,29 @@ async function main() {
     const runDir = resolve(process.cwd(), "runs", String(evalDef.id));
     mkdirSync(runDir, { recursive: true });
 
+    if (evalDef.tier === "structural") {
+      const grades = runStructuralCheck(evalDef);
+      writeFileSync(resolve(runDir, "grades.json"), JSON.stringify(grades, null, 2));
+      const summary = summarizeGrades(grades);
+      console.log(`  structural: ${summary.passed}/${summary.total} passed, $0.0000, instant`);
+      for (const grade of grades) {
+        console.log(`    [${grade.passed ? "PASS" : "FAIL"}] ${grade.text}`);
+        if (!grade.passed) console.log(`           ${grade.evidence}`);
+      }
+      console.log(
+        `  running total: ${fmtUsd(runningCostUsd)}, ${fmtMs(runningDurationMs)}, ` +
+          `${runningUsage.inputTokens + runningUsage.cacheReadInputTokens + runningUsage.cacheCreationInputTokens} in / ${runningUsage.outputTokens} out tokens\n`
+      );
+      summaryRows.push({
+        id: evalDef.id,
+        tier: evalDef.tier,
+        passRate: `${summary.passed}/${summary.total}`,
+        tokens: 0,
+        durationMs: 0,
+      });
+      continue;
+    }
+
     const executorResult = await runExecutor(evalDef.id, evalDef.prompt);
     writeFileSync(resolve(runDir, "executor.json"), JSON.stringify(executorResult, null, 2));
 
@@ -113,20 +129,35 @@ async function main() {
         (executorResult.errorsEncountered > 0 ? ` [${executorResult.errorsEncountered} error(s)]` : "")
     );
 
-    const judgeResult = await runJudge(evalDef.id, executorResult, evalDef.expectations);
-    writeFileSync(resolve(runDir, "judge.json"), JSON.stringify(judgeResult, null, 2));
+    let grades: JudgeGrade[];
+    let judgeUsage = emptyUsage();
+    let judgeCost = 0;
+    let judgeDurationMs = 0;
 
-    const judgeCost = estimateCostUsd(judgeResult.usage, judgeResult.model);
-    runningUsage = addUsage(runningUsage, judgeResult.usage);
-    runningCostUsd += judgeCost;
-    runningDurationMs += judgeResult.durationMs;
+    if (evalDef.tier === "process") {
+      grades = checkProcessRules(executorResult, evalDef.process_rules);
+      writeFileSync(resolve(runDir, "grades.json"), JSON.stringify(grades, null, 2));
+      const summary = summarizeGrades(grades);
+      console.log(`  process:  ${summary.passed}/${summary.total} passed, $0.0000 (mechanical, no judge call)`);
+    } else {
+      const judgeResult = await runJudge(evalDef.id, executorResult, evalDef.expectations);
+      writeFileSync(resolve(runDir, "judge.json"), JSON.stringify(judgeResult, null, 2));
+      grades = judgeResult.grades;
+      judgeUsage = judgeResult.usage;
+      judgeCost = estimateCostUsd(judgeResult.usage, judgeResult.model);
+      judgeDurationMs = judgeResult.durationMs;
+      runningUsage = addUsage(runningUsage, judgeUsage);
+      runningCostUsd += judgeCost;
+      runningDurationMs += judgeDurationMs;
+      const summary = summarizeGrades(grades);
+      console.log(
+        `  judge:    ${summary.passed}/${summary.total} passed, ` +
+          `${judgeUsage.inputTokens + judgeUsage.cacheReadInputTokens + judgeUsage.cacheCreationInputTokens} in / ${judgeUsage.outputTokens} out tokens, ` +
+          `${fmtMs(judgeDurationMs)}, ${fmtUsd(judgeCost)}`
+      );
+    }
 
-    console.log(
-      `  judge:    ${judgeResult.summary.passed}/${judgeResult.summary.total} passed, ` +
-        `${judgeResult.usage.inputTokens + judgeResult.usage.cacheReadInputTokens + judgeResult.usage.cacheCreationInputTokens} in / ${judgeResult.usage.outputTokens} out tokens, ` +
-        `${fmtMs(judgeResult.durationMs)}, ${fmtUsd(judgeCost)}`
-    );
-    for (const grade of judgeResult.grades) {
+    for (const grade of grades) {
       console.log(`    [${grade.passed ? "PASS" : "FAIL"}] ${grade.text}`);
       if (!grade.passed) console.log(`           ${grade.evidence}`);
     }
@@ -141,17 +172,18 @@ async function main() {
       executorResult.usage.outputTokens +
       executorResult.usage.cacheCreationInputTokens +
       executorResult.usage.cacheReadInputTokens +
-      judgeResult.usage.inputTokens +
-      judgeResult.usage.outputTokens +
-      judgeResult.usage.cacheCreationInputTokens +
-      judgeResult.usage.cacheReadInputTokens;
+      judgeUsage.inputTokens +
+      judgeUsage.outputTokens +
+      judgeUsage.cacheCreationInputTokens +
+      judgeUsage.cacheReadInputTokens;
 
+    const summary = summarizeGrades(grades);
     summaryRows.push({
       id: evalDef.id,
       tier: evalDef.tier,
-      passRate: `${judgeResult.summary.passed}/${judgeResult.summary.total}`,
+      passRate: `${summary.passed}/${summary.total}`,
       tokens: totalTokens,
-      durationMs: executorResult.durationMs + judgeResult.durationMs,
+      durationMs: executorResult.durationMs + judgeDurationMs,
     });
   }
 
