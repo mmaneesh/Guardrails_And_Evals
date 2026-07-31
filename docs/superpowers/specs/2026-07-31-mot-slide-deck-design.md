@@ -170,10 +170,12 @@ analogy having to carry that weight on its own.
 ## Dependencies / Open Items
 
 - Slides 9 and 10's exact content (terminal output, final cost numbers)
-  depend on the eval-suite restructuring (5 structural / 2 process / 3
-  semantic evals, mechanical grading for tiers 1-2) discussed and agreed
-  in conversation but **not yet written up as its own spec**. That's a
-  separate design doc to write before either slide can be finalized.
+  depend on the eval-suite restructuring, now specced separately in
+  `2026-07-31-mot-eval-suite-restructuring-design.md` (5 structural / 2
+  process / 3 semantic evals, mechanical grading for tiers 1-2). That
+  spec is design-only too — once it's implemented and run once for real,
+  these two slides can be filled in with actual output instead of
+  placeholders.
 - Closing quote (slide 12) is a placeholder — needs actual copy.
 - Exact pyramid diagram proportions/annotations (eval counts, $ per tier)
   should be filled in once the eval-suite spec locks the final numbers.
