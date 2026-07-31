@@ -143,6 +143,14 @@ live counter.
   that the justification is good. That's an intentional trade-off for
   this tier (make it fast and free) but worth saying out loud rather than
   claiming parity with the old judge-graded version.
+- Eval 7's originally-planned second process rule — a `read_file` check
+  that the model reads `references/breaking_change_judgment.md` before
+  assigning severity — was dropped during implementation.
+  `scripts/executor.ts`'s `buildSystemPrompt()` already inlines that
+  file's full content into the cached system prompt, so the model has no
+  functional reason to call `read_file` on it. The rule would have been
+  unpassable-by-design rather than a meaningful process signal. Eval 7
+  therefore relies solely on the `final_text_field_not_severity` rule.
 
 ## Dependencies
 

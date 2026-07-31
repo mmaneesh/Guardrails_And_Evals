@@ -62,10 +62,19 @@ Prints the three-bucket JSON output (`structuralViolations`,
 npm run validate:selftest
 ```
 
-Runs the validator against all three fixtures and asserts the documented
-issue counts (4 / 0 / 0+1). Run this after any change to
-`validate-schema.ts` — everything downstream trusts this layer, so it
-should be the first thing that breaks if it's wrong.
+Runs the validator against all six fixtures and asserts the documented
+issue counts for each. Run this after any change to `validate-schema.ts` —
+everything downstream trusts this layer, so it should be the first thing
+that breaks if it's wrong.
+
+```bash
+npm run selftest:structural
+npm run selftest:process
+```
+
+These exercise the structural and process mechanical checkers directly,
+with no live API calls — the fastest way to confirm a grading-logic change
+didn't break the cheap tiers.
 
 ## Running the full eval loop
 
@@ -76,11 +85,23 @@ npm run run-evals -- --tier semantic     # the expensive tier
 npm run run-evals -- --tier all
 ```
 
-Each eval runs an **executor** (an agentic loop with two narrow tools —
-`read_file` and `run_validator` — capped at 6 turns) against the live
-Claude API, then a separate **judge** call grades the executor's transcript
-against that eval's expectations. The orchestrator prints a running token
-and cost total as it goes, and writes both results to `runs/<eval-id>/`.
+What each eval actually does depends on its tier:
+
+- **Structural** evals call the deterministic validator directly and
+  compare its output to the fixture's documented counts. No live model
+  call at all — free and instant.
+- **Process** evals run the **executor** (an agentic loop with two narrow
+  tools — `read_file` and `run_validator` — capped at 6 turns) against the
+  live Claude API, then grade the resulting transcript *mechanically*
+  (`scripts/process-check.ts`). No judge call.
+- **Semantic** evals run the executor and then make a separate **judge**
+  call that grades the executor's transcript against that eval's
+  expectations.
+
+The orchestrator prints a running token and cost total as it goes, and
+writes results to `runs/<eval-id>/` — what lands there varies by tier:
+structural writes `grades.json` only, process writes `executor.json` +
+`grades.json`, semantic writes `executor.json` + `judge.json`.
 
 Optional `--max-cost <dollars>` stops launching further evals once
 cumulative estimated spend crosses the threshold, preserving whatever
@@ -88,8 +109,9 @@ already completed.
 
 Models and pricing are centralized in `scripts/config.ts` — after a real
 run shows the actual executor/judge token split, that's the file to edit
-(e.g. swapping the judge to `claude-haiku-4-5` for the mechanical grading
-tier).
+(e.g. pointing `JUDGE_MODEL` at `claude-haiku-4-5`). Note that only the
+semantic tier makes a judge call at all, so `JUDGE_MODEL` has no effect on
+the structural or process tiers.
 
 ## Design notes worth knowing before you touch this
 
