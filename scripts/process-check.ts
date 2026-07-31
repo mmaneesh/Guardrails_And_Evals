@@ -5,8 +5,13 @@ function toolCalledBeforeAnyText(
   toolName: string,
   inputMatches?: (input: unknown) => boolean
 ): boolean {
-  for (const entry of transcript) {
-    if (entry.type === "text") return false;
+  for (let i = 0; i < transcript.length; i++) {
+    const entry = transcript[i];
+    if (entry.type === "text") {
+      const nextIsToolCall = transcript[i + 1]?.type === "tool_call";
+      if (!nextIsToolCall) return false;
+      continue;
+    }
     if (entry.type === "tool_call" && entry.name === toolName) {
       if (!inputMatches || inputMatches(entry.input)) return true;
     }

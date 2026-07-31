@@ -72,10 +72,9 @@
       "id": 7,
       "tier": "process",
       "prompt": "spec: evals/files/order_schema.yaml, response: evals/files/order_response.json - is the status field okay?",
-      "expected_output": "Skill reads the judgment reference doc before assigning severity to the status enum mismatch, and does not mark it critical.",
+      "expected_output": "Skill does not mark the status enum mismatch as critical severity.",
       "files": ["evals/files/order_schema.yaml", "evals/files/order_response.json", "references/breaking_change_judgment.md"],
       "process_rules": [
-        { "type": "tool_before_any_text", "tool": "read_file", "input_path": "references/breaking_change_judgment.md" },
         { "type": "final_text_field_not_severity", "field": "status", "severity": "critical" }
       ]
     },

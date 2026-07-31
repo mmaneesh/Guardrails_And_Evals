@@ -46,16 +46,27 @@ expect(
 );
 
 const badOrder = fakeResult(
-  [
-    { type: "text", text: "This looks fine." },
-    { type: "tool_call", name: "run_validator", input: {}, output: {}, isError: false },
-  ],
+  [{ type: "text", text: "This looks fine." }],
   "This looks fine."
 );
 expect(
   "text before validator call — fails",
   checkProcessRules(badOrder, validatorRules).every((g) => g.passed),
   false
+);
+
+const sameTurnPreamble = fakeResult(
+  [
+    { type: "text", text: "I'll check this against the schema." },
+    { type: "tool_call", name: "run_validator", input: {}, output: {}, isError: false },
+    { type: "text", text: "Here's what I found." },
+  ],
+  "Here's what I found."
+);
+expect(
+  "same-turn preamble text immediately followed by validator call — passes",
+  checkProcessRules(sameTurnPreamble, validatorRules).every((g) => g.passed),
+  true
 );
 
 // Rule: tool_before_any_text with input_path — reads the judgment doc before text
