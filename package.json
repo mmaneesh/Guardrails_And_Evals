@@ -1,0 +1,24 @@
+{
+  "name": "contract-drift-judge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Judges OpenAPI/response drift: ajv for facts, an LLM only for the judgment a validator can't make. Demo material for a Ministry of Testing session on Guardrails & Evals for AI Skills.",
+  "type": "module",
+  "scripts": {
+    "validate": "tsx scripts/validate-schema.ts",
+    "validate:selftest": "tsx scripts/selftest-validator.ts",
+    "run-evals": "tsx scripts/run-evals.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.115.0",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

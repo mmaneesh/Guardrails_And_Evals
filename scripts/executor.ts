@@ -1,0 +1,235 @@
+import Anthropic from "@anthropic-ai/sdk";
+import { readFileSync } from "node:fs";
+import { isAbsolute, relative, resolve } from "node:path";
+import { validate } from "./validate-schema.js";
+import {
+  EXECUTOR_MODEL,
+  MAX_EXECUTOR_TURNS,
+  addUsage,
+  emptyUsage,
+  type ExecutorResult,
+  type TranscriptEntry,
+  type Usage,
+} from "./config.js";
+
+const REPO_ROOT = process.cwd();
+
+// The executor gets exactly two narrow, dedicated tools instead of a
+// general shell — a deterministic guardrail a model can't be talked out
+// of. Only these repo-relative prefixes are readable.
+const ALLOWED_READ_PREFIXES = ["SKILL.md", "references/", "evals/files/"];
+
+function resolveSafePath(requestedPath: string): string {
+  const resolved = resolve(REPO_ROOT, requestedPath);
+  const rel = relative(REPO_ROOT, resolved);
+  if (rel.startsWith("..") || isAbsolute(rel)) {
+    throw new Error(`Path escapes the repository root: ${requestedPath}`);
+  }
+  const allowed = ALLOWED_READ_PREFIXES.some((prefix) => rel === prefix || rel.startsWith(prefix));
+  if (!allowed) {
+    throw new Error(`Path not permitted (must be SKILL.md, references/, or evals/files/): ${requestedPath}`);
+  }
+  return resolved;
+}
+
+function buildSystemPrompt(): Anthropic.TextBlockParam[] {
+  const skill = readFileSync(resolve(REPO_ROOT, "SKILL.md"), "utf-8");
+  const judgment = readFileSync(
+    resolve(REPO_ROOT, "references/breaking_change_judgment.md"),
+    "utf-8"
+  );
+  const combined = `${skill}\n\n---\n\n${judgment}`;
+  // Single cache_control breakpoint on the whole system block — this content
+  // is identical across every eval in a run, so it's worth caching.
+  return [{ type: "text", text: combined, cache_control: { type: "ephemeral" } }];
+}
+
+const TOOLS: Anthropic.Tool[] = [
+  {
+    name: "read_file",
+    description:
+      "Read a file from this repository. Only SKILL.md, files under references/, and files under evals/files/ can be read.",
+    input_schema: {
+      type: "object",
+      properties: {
+        path: {
+          type: "string",
+          description: "Repo-relative path, e.g. references/breaking_change_judgment.md",
+        },
+      },
+      required: ["path"],
+    },
+  },
+  {
+    name: "run_validator",
+    description:
+      "Run the deterministic ajv-based contract validator against an OpenAPI spec and an actual API response. Returns structuralViolations (hard facts), enumMismatches (facts needing judgment), and undocumentedFields (facts, not violations by default). Always run this before making any claims about a response.",
+    input_schema: {
+      type: "object",
+      properties: {
+        specPath: { type: "string", description: "Repo-relative path to the OpenAPI spec YAML file" },
+        responsePath: {
+          type: "string",
+          description: "Repo-relative path to the captured API response JSON file",
+        },
+      },
+      required: ["specPath", "responsePath"],
+    },
+  },
+];
+
+function executeTool(name: string, input: unknown): { output: unknown; isError: boolean } {
+  try {
+    if (name === "read_file") {
+      const { path } = input as { path: string };
+      return { output: readFileSync(resolveSafePath(path), "utf-8"), isError: false };
+    }
+    if (name === "run_validator") {
+      const { specPath, responsePath } = input as { specPath: string; responsePath: string };
+      const result = validate(resolveSafePath(specPath), resolveSafePath(responsePath));
+      return { output: result, isError: false };
+    }
+    return { output: `Unknown tool: ${name}`, isError: true };
+  } catch (err) {
+    return { output: err instanceof Error ? err.message : String(err), isError: true };
+  }
+}
+
+function toUsage(u: Anthropic.Usage): Usage {
+  return {
+    inputTokens: u.input_tokens ?? 0,
+    outputTokens: u.output_tokens ?? 0,
+    cacheCreationInputTokens: u.cache_creation_input_tokens ?? 0,
+    cacheReadInputTokens: u.cache_read_input_tokens ?? 0,
+  };
+}
+
+function isRetryable(err: unknown): boolean {
+  if (err instanceof Anthropic.RateLimitError) return true;
+  if (err instanceof Anthropic.APIConnectionError) return true;
+  if (err instanceof Anthropic.InternalServerError) return true;
+  if (err instanceof Anthropic.APIError && typeof err.status === "number" && err.status >= 500) return true;
+  return false;
+}
+
+function describeError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  return String(err);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+// Strict no-fallback: retry once on a retryable failure, then surface a
+// clear error. No silent fallback model, no cached replay — the live demo
+// is meant to show real behavior, including real failure.
+async function createWithRetry(
+  client: Anthropic,
+  params: Anthropic.MessageCreateParamsNonStreaming,
+  onError: () => void
+): Promise<Anthropic.Message> {
+  try {
+    return await client.messages.create(params);
+  } catch (err) {
+    if (!isRetryable(err)) {
+      onError();
+      throw new Error(`Executor API call failed (not retryable): ${describeError(err)}`);
+    }
+    console.error(`  [executor] retryable error (${describeError(err)}) — retrying once in 2s...`);
+    await sleep(2000);
+    try {
+      return await client.messages.create(params);
+    } catch (err2) {
+      onError();
+      throw new Error(`Executor API call failed twice: ${describeError(err2)}`);
+    }
+  }
+}
+
+export async function runExecutor(evalId: number, prompt: string): Promise<ExecutorResult> {
+  const client = new Anthropic();
+  const system = buildSystemPrompt();
+  const messages: Anthropic.MessageParam[] = [{ role: "user", content: prompt }];
+
+  const transcript: TranscriptEntry[] = [];
+  const toolCalls: Record<string, number> = {};
+  let usage = emptyUsage();
+  let errorsEncountered = 0;
+  let finalText = "";
+  let incomplete = true;
+  let totalSteps = 0;
+
+  const start = Date.now();
+
+  for (let turn = 0; turn < MAX_EXECUTOR_TURNS; turn++) {
+    totalSteps++;
+
+    const response = await createWithRetry(
+      client,
+      {
+        model: EXECUTOR_MODEL,
+        max_tokens: 4096,
+        system,
+        tools: TOOLS,
+        output_config: { effort: "medium" },
+        messages,
+      },
+      () => {
+        errorsEncountered++;
+      }
+    );
+
+    usage = addUsage(usage, toUsage(response.usage));
+
+    const textParts = response.content
+      .filter((b): b is Anthropic.TextBlock => b.type === "text")
+      .map((b) => b.text);
+    if (textParts.length) {
+      const text = textParts.join("\n");
+      transcript.push({ type: "text", text });
+      finalText = text;
+    }
+
+    if (response.stop_reason !== "tool_use") {
+      incomplete = false;
+      break;
+    }
+
+    messages.push({ role: "assistant", content: response.content });
+
+    const toolResults: Anthropic.ToolResultBlockParam[] = [];
+    for (const block of response.content) {
+      if (block.type !== "tool_use") continue;
+      toolCalls[block.name] = (toolCalls[block.name] ?? 0) + 1;
+      const { output, isError } = executeTool(block.name, block.input);
+      transcript.push({ type: "tool_call", name: block.name, input: block.input, output, isError });
+      if (isError) errorsEncountered++;
+      toolResults.push({
+        type: "tool_result",
+        tool_use_id: block.id,
+        content: typeof output === "string" ? output : JSON.stringify(output),
+        is_error: isError,
+      });
+    }
+    messages.push({ role: "user", content: toolResults });
+  }
+
+  const durationMs = Date.now() - start;
+
+  return {
+    evalId,
+    model: EXECUTOR_MODEL,
+    toolCalls,
+    totalToolCalls: Object.values(toolCalls).reduce((a, b) => a + b, 0),
+    totalSteps,
+    outputChars: finalText.length,
+    transcriptChars: JSON.stringify(transcript).length,
+    errorsEncountered,
+    incomplete,
+    durationMs,
+    usage,
+    finalText,
+    transcript,
+  };
+}

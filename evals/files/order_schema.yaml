@@ -1,0 +1,51 @@
+openapi: 3.0.3
+info:
+  title: Orders API
+  version: 1.2.0
+paths:
+  /orders/{id}:
+    get:
+      summary: Get an order by ID
+      responses:
+        '200':
+          description: Order found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+components:
+  schemas:
+    Order:
+      type: object
+      required: [id, status, total_amount, currency, created_at, items]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, confirmed, shipped, delivered, cancelled]
+        total_amount:
+          type: number
+        currency:
+          type: string
+        customer_email:
+          type: string
+          format: email
+        discount_code:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            type: object
+            required: [sku, quantity, unit_price]
+            properties:
+              sku:
+                type: string
+              quantity:
+                type: integer
+              unit_price:
+                type: number
