@@ -8,7 +8,7 @@
     "validate": "tsx scripts/validate-schema.ts",
     "validate:selftest": "tsx scripts/selftest-validator.ts",
     "selftest:mechanical": "tsx scripts/selftest-mechanical-checks.ts",
-    "run-evals": "tsx scripts/run-evals.ts"
+    "run-evals": "tsx --env-file=.env scripts/run-evals.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
