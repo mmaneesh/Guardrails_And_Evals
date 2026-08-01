@@ -21,7 +21,6 @@ const cleanEval: StructuralEvalDef = {
   tier: "structural",
   prompt: "test",
   expected_output: "test",
-  files: [],
   specPath: "evals/files/order_schema.yaml",
   responsePath: "evals/files/order_response_clean.json",
   expected_counts: { structuralViolations: 0, enumMismatches: 0, undocumentedFields: 0 },
@@ -32,7 +31,6 @@ const enumOnlyEval: StructuralEvalDef = {
   tier: "structural",
   prompt: "test",
   expected_output: "test",
-  files: [],
   specPath: "evals/files/order_schema.yaml",
   responsePath: "evals/files/order_response_enum_only.json",
   expected_counts: { structuralViolations: 0, enumMismatches: 1, undocumentedFields: 0 },
@@ -113,40 +111,6 @@ const sameTurnClaim = fakeResult(
 check(
   "process: same-turn text stating a severity claim before the validator call — fails",
   checkProcessRules(sameTurnClaim, validatorRules),
-  false
-);
-
-// Rule: tool_before_any_text with input_path — reads the judgment doc before text
-const readDocRules: ProcessRule[] = [
-  { type: "tool_before_any_text", tool: "read_file", input_path: "references/breaking_change_judgment.md" },
-];
-
-const readDocFirst = fakeResult(
-  [
-    { type: "tool_call", name: "run_validator", input: {}, output: {}, isError: false },
-    {
-      type: "tool_call",
-      name: "read_file",
-      input: { path: "references/breaking_change_judgment.md" },
-      output: "doc contents",
-      isError: false,
-    },
-    { type: "text", text: "The status field is medium severity." },
-  ],
-  "The status field is medium severity."
-);
-check("process: reads judgment doc before text — passes", checkProcessRules(readDocFirst, readDocRules), true);
-
-const wrongFileRead = fakeResult(
-  [
-    { type: "tool_call", name: "read_file", input: { path: "SKILL.md" }, output: "doc contents", isError: false },
-    { type: "text", text: "The status field is medium severity." },
-  ],
-  "The status field is medium severity."
-);
-check(
-  "process: reads a different file, not the judgment doc — fails",
-  checkProcessRules(wrongFileRead, readDocRules),
   false
 );
 

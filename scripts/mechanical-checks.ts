@@ -54,11 +54,7 @@ function looksLikeClaim(text: string): boolean {
   return CLAIM_KEYWORDS.some((kw) => lower.includes(kw));
 }
 
-function toolCalledBeforeAnyText(
-  transcript: ExecutorResult["transcript"],
-  toolName: string,
-  inputMatches?: (input: unknown) => boolean
-): boolean {
+function toolCalledBeforeAnyText(transcript: ExecutorResult["transcript"], toolName: string): boolean {
   for (let i = 0; i < transcript.length; i++) {
     const entry = transcript[i];
     if (entry.type === "text") {
@@ -66,9 +62,7 @@ function toolCalledBeforeAnyText(
       if (!nextIsToolCall || looksLikeClaim(entry.text)) return false;
       continue;
     }
-    if (entry.type === "tool_call" && entry.name === toolName) {
-      if (!inputMatches || inputMatches(entry.input)) return true;
-    }
+    if (entry.type === "tool_call" && entry.name === toolName) return true;
   }
   return false;
 }
@@ -86,13 +80,9 @@ function finalTextFieldNotSeverity(finalText: string, field: string, severity: s
 export function checkProcessRules(executorResult: ExecutorResult, rules: ProcessRule[]): JudgeGrade[] {
   return rules.map((rule): JudgeGrade => {
     if (rule.type === "tool_before_any_text") {
-      const passed = toolCalledBeforeAnyText(
-        executorResult.transcript,
-        rule.tool,
-        rule.input_path ? (input) => (input as { path?: string }).path === rule.input_path : undefined
-      );
+      const passed = toolCalledBeforeAnyText(executorResult.transcript, rule.tool);
       return {
-        text: `${rule.tool}${rule.input_path ? ` (${rule.input_path})` : ""} called before any text output`,
+        text: `${rule.tool} called before any text output`,
         passed,
         evidence: passed
           ? `Found ${rule.tool} tool call before any text entry in the transcript`

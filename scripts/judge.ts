@@ -1,11 +1,13 @@
 import Anthropic from "@anthropic-ai/sdk";
 import {
   JUDGE_MODEL,
+  createWithRetry,
+  describeError,
   summarizeGrades,
+  toUsage,
   type ExecutorResult,
   type JudgeGrade,
   type JudgeResult,
-  type Usage,
 } from "./config.js";
 
 const JUDGE_SYSTEM_PROMPT = `You are grading a transcript produced by an AI skill against a fixed list of expectations.
@@ -38,32 +40,6 @@ const GRADE_SCHEMA = {
   additionalProperties: false,
 } as const;
 
-function isRetryable(err: unknown): boolean {
-  if (err instanceof Anthropic.RateLimitError) return true;
-  if (err instanceof Anthropic.APIConnectionError) return true;
-  if (err instanceof Anthropic.InternalServerError) return true;
-  if (err instanceof Anthropic.APIError && typeof err.status === "number" && err.status >= 500) return true;
-  return false;
-}
-
-function describeError(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  return String(err);
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-function toUsage(u: Anthropic.Usage): Usage {
-  return {
-    inputTokens: u.input_tokens ?? 0,
-    outputTokens: u.output_tokens ?? 0,
-    cacheCreationInputTokens: u.cache_creation_input_tokens ?? 0,
-    cacheReadInputTokens: u.cache_read_input_tokens ?? 0,
-  };
-}
-
 function buildUserMessage(executorResult: ExecutorResult, expectations: string[]): string {
   const transcriptLines = executorResult.transcript.map((entry) => {
     if (entry.type === "text") return `[text] ${entry.text}`;
@@ -89,28 +65,6 @@ function buildUserMessage(executorResult: ExecutorResult, expectations: string[]
   ].join("\n");
 }
 
-// Strict no-fallback, same as the executor: retry once on a retryable
-// failure, then surface a clear error.
-async function createWithRetry(
-  client: Anthropic,
-  params: Anthropic.MessageCreateParamsNonStreaming
-): Promise<Anthropic.Message> {
-  try {
-    return await client.messages.create(params);
-  } catch (err) {
-    if (!isRetryable(err)) {
-      throw new Error(`Judge API call failed (not retryable): ${describeError(err)}`);
-    }
-    console.error(`  [judge] retryable error (${describeError(err)}) — retrying once in 2s...`);
-    await sleep(2000);
-    try {
-      return await client.messages.create(params);
-    } catch (err2) {
-      throw new Error(`Judge API call failed twice: ${describeError(err2)}`);
-    }
-  }
-}
-
 export async function runJudge(
   evalId: number,
   executorResult: ExecutorResult,
@@ -119,18 +73,22 @@ export async function runJudge(
   const client = new Anthropic();
   const start = Date.now();
 
-  const response = await createWithRetry(client, {
-    model: JUDGE_MODEL,
-    max_tokens: 4096,
-    system: JUDGE_SYSTEM_PROMPT,
-    // Grading a fixed transcript against a fixed expectation list is
-    // mechanical, not exploratory — low effort and no thinking keeps the
-    // cheap tier cheap. Sonnet 5 (unlike Opus 5) accepts disabled thinking
-    // at any effort level.
-    output_config: { effort: "low", format: { type: "json_schema", schema: GRADE_SCHEMA } },
-    thinking: { type: "disabled" },
-    messages: [{ role: "user", content: buildUserMessage(executorResult, expectations) }],
-  });
+  const response = await createWithRetry(
+    client,
+    {
+      model: JUDGE_MODEL,
+      max_tokens: 4096,
+      system: JUDGE_SYSTEM_PROMPT,
+      // Grading a fixed transcript against a fixed expectation list is
+      // mechanical, not exploratory — low effort and no thinking keeps the
+      // cheap tier cheap. Sonnet 5 (unlike Opus 5) accepts disabled thinking
+      // at any effort level.
+      output_config: { effort: "low", format: { type: "json_schema", schema: GRADE_SCHEMA } },
+      thinking: { type: "disabled" },
+      messages: [{ role: "user", content: buildUserMessage(executorResult, expectations) }],
+    },
+    "Judge"
+  );
 
   const durationMs = Date.now() - start;
   const usage = toUsage(response.usage);

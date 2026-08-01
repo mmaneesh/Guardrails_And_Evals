@@ -7,12 +7,14 @@ import {
   EXECUTOR_MODEL,
   JUDGE_MODEL,
   addUsage,
+  billableInputTokens,
   emptyUsage,
   estimateCostUsd,
   summarizeGrades,
   type EvalsFile,
   type JudgeGrade,
   type Tier,
+  type Usage,
 } from "./config.js";
 
 function parseArgs(argv: string[]): { tier: Tier | "all"; maxCostUsd?: number } {
@@ -46,6 +48,20 @@ function fmtUsd(n: number): string {
 
 function fmtMs(n: number): string {
   return `${(n / 1000).toFixed(1)}s`;
+}
+
+function printGrades(grades: JudgeGrade[]): void {
+  for (const grade of grades) {
+    console.log(`    [${grade.passed ? "PASS" : "FAIL"}] ${grade.text}`);
+    if (!grade.passed) console.log(`           ${grade.evidence}`);
+  }
+}
+
+function printRunningTotal(usage: Usage, costUsd: number, durationMs: number): void {
+  console.log(
+    `  running total: ${fmtUsd(costUsd)}, ${fmtMs(durationMs)}, ` +
+      `${billableInputTokens(usage)} in / ${usage.outputTokens} out tokens\n`
+  );
 }
 
 async function main() {
@@ -94,14 +110,8 @@ async function main() {
       writeFileSync(resolve(runDir, "grades.json"), JSON.stringify(grades, null, 2));
       const summary = summarizeGrades(grades);
       console.log(`  structural: ${summary.passed}/${summary.total} passed, $0.0000, instant`);
-      for (const grade of grades) {
-        console.log(`    [${grade.passed ? "PASS" : "FAIL"}] ${grade.text}`);
-        if (!grade.passed) console.log(`           ${grade.evidence}`);
-      }
-      console.log(
-        `  running total: ${fmtUsd(runningCostUsd)}, ${fmtMs(runningDurationMs)}, ` +
-          `${runningUsage.inputTokens + runningUsage.cacheReadInputTokens + runningUsage.cacheCreationInputTokens} in / ${runningUsage.outputTokens} out tokens\n`
-      );
+      printGrades(grades);
+      printRunningTotal(runningUsage, runningCostUsd, runningDurationMs);
       summaryRows.push({
         id: evalDef.id,
         tier: evalDef.tier,
@@ -122,7 +132,7 @@ async function main() {
 
     console.log(
       `  executor: ${executorResult.totalToolCalls} tool call(s), ${executorResult.totalSteps} step(s), ` +
-        `${executorResult.usage.inputTokens + executorResult.usage.cacheReadInputTokens + executorResult.usage.cacheCreationInputTokens} in / ${executorResult.usage.outputTokens} out tokens, ` +
+        `${billableInputTokens(executorResult.usage)} in / ${executorResult.usage.outputTokens} out tokens, ` +
         `${fmtMs(executorResult.durationMs)}, ${fmtUsd(executorCost)}` +
         (executorResult.incomplete ? " [INCOMPLETE — hit turn cap]" : "") +
         (executorResult.errorsEncountered > 0 ? ` [${executorResult.errorsEncountered} error(s)]` : "")
@@ -151,20 +161,13 @@ async function main() {
       const summary = summarizeGrades(grades);
       console.log(
         `  judge:    ${summary.passed}/${summary.total} passed, ` +
-          `${judgeUsage.inputTokens + judgeUsage.cacheReadInputTokens + judgeUsage.cacheCreationInputTokens} in / ${judgeUsage.outputTokens} out tokens, ` +
+          `${billableInputTokens(judgeUsage)} in / ${judgeUsage.outputTokens} out tokens, ` +
           `${fmtMs(judgeDurationMs)}, ${fmtUsd(judgeCost)}`
       );
     }
 
-    for (const grade of grades) {
-      console.log(`    [${grade.passed ? "PASS" : "FAIL"}] ${grade.text}`);
-      if (!grade.passed) console.log(`           ${grade.evidence}`);
-    }
-
-    console.log(
-      `  running total: ${fmtUsd(runningCostUsd)}, ${fmtMs(runningDurationMs)}, ` +
-        `${runningUsage.inputTokens + runningUsage.cacheReadInputTokens + runningUsage.cacheCreationInputTokens} in / ${runningUsage.outputTokens} out tokens\n`
-    );
+    printGrades(grades);
+    printRunningTotal(runningUsage, runningCostUsd, runningDurationMs);
 
     const totalTokens =
       executorResult.usage.inputTokens +

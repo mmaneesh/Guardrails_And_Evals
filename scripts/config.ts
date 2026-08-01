@@ -1,3 +1,5 @@
+import Anthropic from "@anthropic-ai/sdk";
+
 // Central place to change models/limits after a live run shows real cost —
 // swap JUDGE_MODEL to "claude-haiku-4-5" once you've measured the actual
 // executor/judge token split (see README).
@@ -41,13 +43,66 @@ export function addUsage(a: Usage, b: Usage): Usage {
 }
 
 // Cache reads/writes are still input tokens, priced off the same input rate.
+export function billableInputTokens(usage: Usage): number {
+  return usage.inputTokens + usage.cacheCreationInputTokens + usage.cacheReadInputTokens;
+}
+
 // This is an estimate for live console visibility, not a billing reconciliation.
 export function estimateCostUsd(usage: Usage, model: string): number {
   const rate = PRICING[model];
   if (!rate) return 0;
-  const billableInput =
-    usage.inputTokens + usage.cacheCreationInputTokens + usage.cacheReadInputTokens;
-  return (billableInput * rate.input + usage.outputTokens * rate.output) / 1_000_000;
+  return (billableInputTokens(usage) * rate.input + usage.outputTokens * rate.output) / 1_000_000;
+}
+
+// Shared by executor.ts and judge.ts — both retry once on a retryable error
+// (rate limit, connection error, 5xx) then fail loudly. No silent fallback.
+export function isRetryable(err: unknown): boolean {
+  if (err instanceof Anthropic.RateLimitError) return true;
+  if (err instanceof Anthropic.APIConnectionError) return true;
+  if (err instanceof Anthropic.InternalServerError) return true;
+  if (err instanceof Anthropic.APIError && typeof err.status === "number" && err.status >= 500) return true;
+  return false;
+}
+
+export function describeError(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+export function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+export function toUsage(u: Anthropic.Usage): Usage {
+  return {
+    inputTokens: u.input_tokens ?? 0,
+    outputTokens: u.output_tokens ?? 0,
+    cacheCreationInputTokens: u.cache_creation_input_tokens ?? 0,
+    cacheReadInputTokens: u.cache_read_input_tokens ?? 0,
+  };
+}
+
+export async function createWithRetry(
+  client: Anthropic,
+  params: Anthropic.MessageCreateParamsNonStreaming,
+  label: string,
+  onError?: () => void
+): Promise<Anthropic.Message> {
+  try {
+    return await client.messages.create(params);
+  } catch (err) {
+    if (!isRetryable(err)) {
+      onError?.();
+      throw new Error(`${label} API call failed (not retryable): ${describeError(err)}`);
+    }
+    console.error(`  [${label.toLowerCase()}] retryable error (${describeError(err)}) — retrying once in 2s...`);
+    await sleep(2000);
+    try {
+      return await client.messages.create(params);
+    } catch (err2) {
+      onError?.();
+      throw new Error(`${label} API call failed twice: ${describeError(err2)}`);
+    }
+  }
 }
 
 export type TranscriptEntry =
@@ -99,14 +154,13 @@ export function summarizeGrades(grades: JudgeGrade[]): JudgeResult["summary"] {
 export type Tier = "structural" | "process" | "semantic";
 
 export type ProcessRule =
-  | { type: "tool_before_any_text"; tool: string; input_path?: string }
+  | { type: "tool_before_any_text"; tool: string }
   | { type: "final_text_field_not_severity"; field: string; severity: string };
 
 type EvalBase = {
   id: number;
   prompt: string;
   expected_output: string;
-  files: string[];
 };
 
 export type StructuralEvalDef = EvalBase & {

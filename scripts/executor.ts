@@ -6,10 +6,11 @@ import {
   EXECUTOR_MODEL,
   MAX_EXECUTOR_TURNS,
   addUsage,
+  createWithRetry,
   emptyUsage,
+  toUsage,
   type ExecutorResult,
   type TranscriptEntry,
-  type Usage,
 } from "./config.js";
 
 const REPO_ROOT = process.cwd();
@@ -95,58 +96,9 @@ function executeTool(name: string, input: unknown): { output: unknown; isError: 
   }
 }
 
-function toUsage(u: Anthropic.Usage): Usage {
-  return {
-    inputTokens: u.input_tokens ?? 0,
-    outputTokens: u.output_tokens ?? 0,
-    cacheCreationInputTokens: u.cache_creation_input_tokens ?? 0,
-    cacheReadInputTokens: u.cache_read_input_tokens ?? 0,
-  };
-}
-
-function isRetryable(err: unknown): boolean {
-  if (err instanceof Anthropic.RateLimitError) return true;
-  if (err instanceof Anthropic.APIConnectionError) return true;
-  if (err instanceof Anthropic.InternalServerError) return true;
-  if (err instanceof Anthropic.APIError && typeof err.status === "number" && err.status >= 500) return true;
-  return false;
-}
-
-function describeError(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  return String(err);
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
 // Strict no-fallback: retry once on a retryable failure, then surface a
 // clear error. No silent fallback model, no cached replay — the live demo
 // is meant to show real behavior, including real failure.
-async function createWithRetry(
-  client: Anthropic,
-  params: Anthropic.MessageCreateParamsNonStreaming,
-  onError: () => void
-): Promise<Anthropic.Message> {
-  try {
-    return await client.messages.create(params);
-  } catch (err) {
-    if (!isRetryable(err)) {
-      onError();
-      throw new Error(`Executor API call failed (not retryable): ${describeError(err)}`);
-    }
-    console.error(`  [executor] retryable error (${describeError(err)}) — retrying once in 2s...`);
-    await sleep(2000);
-    try {
-      return await client.messages.create(params);
-    } catch (err2) {
-      onError();
-      throw new Error(`Executor API call failed twice: ${describeError(err2)}`);
-    }
-  }
-}
-
 export async function runExecutor(evalId: number, prompt: string): Promise<ExecutorResult> {
   const client = new Anthropic();
   const system = buildSystemPrompt();
@@ -175,6 +127,7 @@ export async function runExecutor(evalId: number, prompt: string): Promise<Execu
         output_config: { effort: "medium" },
         messages,
       },
+      "Executor",
       () => {
         errorsEncountered++;
       }
