@@ -2,8 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { runExecutor } from "./executor.js";
 import { runJudge } from "./judge.js";
-import { runStructuralCheck } from "./structural-check.js";
-import { checkProcessRules } from "./process-check.js";
+import { runStructuralCheck, checkProcessRules } from "./mechanical-checks.js";
 import {
   EXECUTOR_MODEL,
   JUDGE_MODEL,

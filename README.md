@@ -68,11 +68,10 @@ everything downstream trusts this layer, so it should be the first thing
 that breaks if it's wrong.
 
 ```bash
-npm run selftest:structural
-npm run selftest:process
+npm run selftest:mechanical
 ```
 
-These exercise the structural and process mechanical checkers directly,
+Exercises both the structural and process mechanical checkers directly,
 with no live API calls — the fastest way to confirm a grading-logic change
 didn't break the cheap tiers.
 
@@ -93,7 +92,7 @@ What each eval actually does depends on its tier:
 - **Process** evals run the **executor** (an agentic loop with two narrow
   tools — `read_file` and `run_validator` — capped at 6 turns) against the
   live Claude API, then grade the resulting transcript *mechanically*
-  (`scripts/process-check.ts`). No judge call.
+  (`scripts/mechanical-checks.ts`). No judge call.
 - **Semantic** evals run the executor and then make a separate **judge**
   call that grades the executor's transcript against that eval's
   expectations.
