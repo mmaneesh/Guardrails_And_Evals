@@ -170,14 +170,10 @@ async function main() {
     printRunningTotal(runningUsage, runningCostUsd, runningDurationMs);
 
     const totalTokens =
-      executorResult.usage.inputTokens +
+      billableInputTokens(executorResult.usage) +
       executorResult.usage.outputTokens +
-      executorResult.usage.cacheCreationInputTokens +
-      executorResult.usage.cacheReadInputTokens +
-      judgeUsage.inputTokens +
-      judgeUsage.outputTokens +
-      judgeUsage.cacheCreationInputTokens +
-      judgeUsage.cacheReadInputTokens;
+      billableInputTokens(judgeUsage) +
+      judgeUsage.outputTokens;
 
     const summary = summarizeGrades(grades);
     summaryRows.push({
