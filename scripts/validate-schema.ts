@@ -17,7 +17,7 @@ type JsonSchema = {
 };
 
 type OpenApiSpec = {
-  components?: { schemas?: { Order?: JsonSchema } };
+  components?: { schemas?: Record<string, JsonSchema> };
 };
 
 export type EnumMismatch = {
@@ -45,14 +45,14 @@ export type ValidationResult = {
 };
 
 /**
- * Loads and parses an OpenAPI YAML file to extract the `Order` schema definition.
+ * Loads one named component schema from an OpenAPI YAML file.
  */
-function loadOrderSchema(specPath: string): JsonSchema {
+function loadSchema(specPath: string, schemaName: string): JsonSchema {
   const raw = readFileSync(specPath, "utf-8");
   const spec = load(raw) as OpenApiSpec;
-  const schema = spec.components?.schemas?.Order;
+  const schema = spec.components?.schemas?.[schemaName];
   if (!schema || typeof schema !== "object") {
-    throw new Error("Unsupported OpenAPI spec: expected components.schemas.Order");
+    throw new Error(`Unsupported OpenAPI spec: expected components.schemas.${schemaName}`);
   }
   return schema;
 }
@@ -156,9 +156,9 @@ function pathFromAjvError(err: ErrorObject): string[] {
  * Deterministically validates an API response against an OpenAPI spec.
  * Partitions results into 3 buckets: structural violations, enum mismatches, and undocumented fields.
  */
-export function validate(specPath: string, responsePath: string): ValidationResult {
-  const orderSchema = loadOrderSchema(specPath);
-  const schemaNoEnum = withoutEnums(orderSchema);
+export function validate(specPath: string, responsePath: string, schemaName = "Order"): ValidationResult {
+  const componentSchema = loadSchema(specPath, schemaName);
+  const schemaNoEnum = withoutEnums(componentSchema);
   let response: unknown;
   try {
     response = JSON.parse(readFileSync(responsePath, "utf-8"));
@@ -186,8 +186,8 @@ export function validate(specPath: string, responsePath: string): ValidationResu
     }
   );
 
-  const enumMismatches = findEnumMismatches(orderSchema, response);
-  const undocumentedFields = findUndocumentedFields(orderSchema, response);
+  const enumMismatches = findEnumMismatches(componentSchema, response);
+  const undocumentedFields = findUndocumentedFields(componentSchema, response);
 
   return { structuralViolations, enumMismatches, undocumentedFields };
 }
@@ -248,15 +248,17 @@ function printValidationReport(specPath: string, responsePath: string, result: V
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const args = process.argv.slice(2);
   const jsonMode = args.includes("--json");
-  const filtered = args.filter((a) => a !== "--json");
+  const schemaFlag = args.indexOf("--schema");
+  const schemaName = schemaFlag >= 0 ? args[schemaFlag + 1] : "Order";
+  const filtered = args.filter((a, index) => a !== "--json" && index !== schemaFlag && index !== schemaFlag + 1);
   const [specPath, responsePath] = filtered;
 
   if (!specPath || !responsePath) {
-    console.error("Usage: tsx validate-schema.ts <spec.yaml> <response.json> [--json]");
+    console.error("Usage: tsx validate-schema.ts <spec.yaml> <response.json> [--schema ComponentName] [--json]");
     process.exit(1);
   }
 
-  const result = validate(specPath, responsePath);
+  const result = validate(specPath, responsePath, schemaName);
   if (jsonMode) {
     console.log(JSON.stringify(result, null, 2));
   } else {
