@@ -25,6 +25,12 @@ validator surfaces, per the criteria in
 deterministic facts, the skill is expected to say so and stop, not
 manufacture judgment where none is needed (see `SKILL.md`'s guardrails).
 
+This demo intentionally supports the included `components.schemas.Order`
+contract and its nested `items` objects. It is not a general OpenAPI
+resolver: `$ref` traversal, multiple endpoints, response selection,
+polymorphic schemas, and spec-to-spec diffs are outside the demonstrated
+scope and should be reported as unsupported rather than guessed.
+
 ## The three-tier eval pyramid
 
 | Tier | What it checks | Cost |
@@ -35,12 +41,79 @@ manufacture judgment where none is needed (see `SKILL.md`'s guardrails).
 
 `evals/evals.json` tags each eval with its tier so you can run the cheap
 tiers on every change and reserve the expensive tier for when it matters.
-Evals 9 and 10 specifically test the skill's guardrails under pressure:
-eval 9 asks "is this safe to ship?" directly (the skill must refuse to
-answer that — see Guardrail #4 in `SKILL.md`), and eval 10 runs against a
+Evals 12 and 14 specifically test the skill's guardrails under pressure:
+eval 12 asks "is this safe to ship?" directly (the skill must refuse to
+answer that — see Guardrail #4 in `SKILL.md`), and eval 14 runs against a
 fixture with a prompt-injection payload hidden in an undocumented field,
 checking that the skill treats it as untrusted data rather than an
 instruction.
+
+## Detailed Execution Flow
+
+### 1. High-Level Flow (Guardrails First, Then Evals)
+
+```mermaid
+flowchart TD
+    subgraph PHASE1["PHASE 1: GUARDRAILS (The Airbag)"]
+        direction TB
+        InputData["OpenAPI Spec + API Response"] --> ToolSandbox["Deterministic Tool Sandbox<br/>(Only read_file & run_validator)"]
+        ToolSandbox --> Validator["scripts/validate-schema.ts (Ajv)<br/>Extracts Ground Truth Facts"]
+        Validator --> ThreeBuckets["3 Fact Buckets:<br/>1. structuralViolations<br/>2. enumMismatches<br/>3. undocumentedFields"]
+        ThreeBuckets --> Rules["SKILL.md Hard Constraints:<br/>• Must run validator first<br/>• No pass/fail authority<br/>• No fabricated causes<br/>• Justify severity"]
+    end
+
+    subgraph PHASE2["PHASE 2: EVALS (The Crash Test)"]
+        direction TB
+        EvalsRunner["npm run run-evals"] --> TierRouter{"Dispatch by Tier"}
+
+        TierRouter -->|"Tier 1: Structural"| T1["⚡ STRUCTURAL (Evals 1–8)<br/>Direct validate() call<br/>• Free ($0.00)<br/>• Instant (0.0s)<br/>• Zero LLM tokens"]
+
+        TierRouter -->|"Tier 2: Process"| T2["⚙️ PROCESS (Evals 9–11)<br/>Executor runs live LLM turn<br/>• Graded mechanically from transcript<br/>• Cheap ($) — No Judge LLM call"]
+
+        TierRouter -->|"Tier 3: Semantic"| T3["🧠 SEMANTIC (Evals 12–14)<br/>Executor runs live LLM turn<br/>• Graded by structured LLM Judge<br/>• Deliberate ($$$) — Tests guardrail limits"]
+    end
+
+    PHASE1 -->|Tested by| PHASE2
+```
+
+### 2. Tier-by-Tier Pipeline Sequence
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Presenter as Presenter / CI
+    participant Runner as run-evals.ts
+    participant Validator as validate-schema.ts
+    participant Executor as Claude Executor (Agent)
+    participant Checker as mechanical-checks.ts
+    participant Judge as Claude Judge (Structured LLM)
+
+    Note over Presenter,Judge: TIER 1: STRUCTURAL EVALS (Deterministic Facts)
+    Presenter->>Runner: npm run run-evals -- --tier structural
+    Runner->>Validator: validate(spec, response)
+    Validator-->>Runner: structuralViolations, enumMismatches, undocumentedFields
+    Runner->>Runner: Compare counts against expected_counts
+    Note right of Runner: Result: 8/8 PASS | $0.0000 | 0 tokens | 0.0s
+
+    Note over Presenter,Judge: TIER 2: PROCESS EVALS (Did the agent follow the rules?)
+    Presenter->>Runner: npm run run-evals -- --tier process
+    Runner->>Executor: runExecutor(evalId, prompt)
+    Executor->>Validator: Tool Call: run_validator(spec, response)
+    Validator-->>Executor: Return facts
+    Executor-->>Runner: Final response + Transcript
+    Runner->>Checker: checkProcessRules(transcript)
+    Checker-->>Runner: Tool invoked before claims? Status not marked critical?
+    Note right of Runner: Result: 3/3 PASS | Cheap (Executor only, NO Judge call)
+
+    Note over Presenter,Judge: TIER 3: SEMANTIC EVALS (Qualitative Judgment & Guardrails)
+    Presenter->>Runner: npm run run-evals -- --tier semantic
+    Runner->>Executor: runExecutor(evalId, prompt)
+    Executor-->>Runner: Final judgment + Transcript
+    Runner->>Judge: runJudge(transcript, expectations)
+    Judge-->>Runner: Structured JSON grades (Safe-to-ship refusal, injection resistance)
+    Note right of Runner: Result: 3/3 PASS | Deliberate (Executor + Judge)
+```
+
 
 ## Setup
 
@@ -62,7 +135,7 @@ Prints the three-bucket JSON output (`structuralViolations`,
 npm run validate:selftest
 ```
 
-Runs the validator against all six fixtures and asserts the documented
+Runs the validator against all nine fixtures and asserts the documented
 issue counts for each. Run this after any change to `validate-schema.ts` —
 everything downstream trusts this layer, so it should be the first thing
 that breaks if it's wrong.
@@ -78,11 +151,12 @@ didn't break the cheap tiers.
 ## Running the full eval loop
 
 ```bash
-npm run run-evals -- --tier structural   # cheapest — no live judgment needed
-npm run run-evals -- --tier process
-npm run run-evals -- --tier semantic     # the expensive tier
-npm run run-evals -- --tier all
+npm run evals:structural   # cheapest ($0.00) — deterministic schema checks
+npm run evals:process      # cheap — checks agent tool sequence from transcript
+npm run evals:semantic     # deliberate — tests guardrails & LLM judge
+npm run evals:all          # runs all 14 evals
 ```
+
 
 What each eval actually does depends on its tier:
 
@@ -111,6 +185,11 @@ run shows the actual executor/judge token split, that's the file to edit
 (e.g. pointing `JUDGE_MODEL` at `claude-haiku-4-5`). Note that only the
 semantic tier makes a judge call at all, so `JUDGE_MODEL` has no effect on
 the structural or process tiers.
+
+Cost figures are estimates for demo planning, not billing records: the
+current tracker reports cached input tokens using the standard input rate.
+Run artifacts are written under `runs/` and ignored by git; do not place
+production secrets or unredacted personal data in fixture payloads.
 
 ## Design notes worth knowing before you touch this
 

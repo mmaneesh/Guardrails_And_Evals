@@ -17,6 +17,9 @@ import {
   type Usage,
 } from "./config.js";
 
+/**
+ * Parses CLI arguments (--tier structural|process|semantic|all, --max-cost <dollars>).
+ */
 function parseArgs(argv: string[]): { tier: Tier | "all"; maxCostUsd?: number } {
   let tier: Tier | "all" = "all";
   let maxCostUsd: number | undefined;
@@ -64,6 +67,9 @@ function printRunningTotal(usage: Usage, costUsd: number, durationMs: number): v
   );
 }
 
+/**
+ * Main harness orchestrating structural, process, and semantic evaluations across tiers.
+ */
 async function main() {
   const { tier, maxCostUsd } = parseArgs(process.argv.slice(2));
 

@@ -1,14 +1,18 @@
 import { validate } from "./validate-schema.js";
 import type { ExecutorResult, JudgeGrade, ProcessRule, StructuralEvalDef } from "./config.js";
 
-// ---- Structural tier: pure validate() call, no LLM involved at all ----
-
+/**
+ * Checks if two string arrays contain the exact same set of elements regardless of order.
+ */
 function sameSet(actual: string[], expected: string[]): boolean {
   if (actual.length !== expected.length) return false;
   const actualSet = new Set(actual);
   return expected.every((f) => actualSet.has(f));
 }
 
+/**
+ * Runs a deterministic Structural Tier check using validate() directly with zero token cost.
+ */
 export function runStructuralCheck(evalDef: StructuralEvalDef): JudgeGrade[] {
   const result = validate(evalDef.specPath, evalDef.responsePath);
   const grades: JudgeGrade[] = [];
@@ -45,15 +49,19 @@ export function runStructuralCheck(evalDef: StructuralEvalDef): JudgeGrade[] {
   return grades;
 }
 
-// ---- Process tier: executor runs live, grading is mechanical (no judge call) ----
-
 const CLAIM_KEYWORDS = ["critical", "high", "medium", "low", "violation", "breaking", "compliant", "safe to ship"];
 
+/**
+ * Checks whether text resembles an unverified severity claim before tools were run.
+ */
 function looksLikeClaim(text: string): boolean {
   const lower = text.toLowerCase();
   return CLAIM_KEYWORDS.some((kw) => lower.includes(kw));
 }
 
+/**
+ * Verifies that the specified tool was called before the agent made any textual claims.
+ */
 function toolCalledBeforeAnyText(transcript: ExecutorResult["transcript"], toolName: string): boolean {
   for (let i = 0; i < transcript.length; i++) {
     const entry = transcript[i];
@@ -67,6 +75,9 @@ function toolCalledBeforeAnyText(transcript: ExecutorResult["transcript"], toolN
   return false;
 }
 
+/**
+ * Verifies that the final output does not assign a forbidden severity rating to a specific field.
+ */
 function finalTextFieldNotSeverity(finalText: string, field: string, severity: string): boolean {
   const clauses = finalText
     .split(/[.;\n]+/)
@@ -77,6 +88,9 @@ function finalTextFieldNotSeverity(finalText: string, field: string, severity: s
   return !fieldClauses.some((c) => c.toLowerCase().includes(severity.toLowerCase()));
 }
 
+/**
+ * Grades process rules mechanically from an execution transcript without calling an LLM judge.
+ */
 export function checkProcessRules(executorResult: ExecutorResult, rules: ProcessRule[]): JudgeGrade[] {
   return rules.map((rule): JudgeGrade => {
     if (rule.type === "tool_before_any_text") {

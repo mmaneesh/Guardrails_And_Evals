@@ -1,17 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-// Central place to change models/limits after a live run shows real cost —
-// swap JUDGE_MODEL to "claude-haiku-4-5" once you've measured the actual
-// executor/judge token split (see README).
 export const EXECUTOR_MODEL = "claude-sonnet-5";
 export const JUDGE_MODEL = "claude-sonnet-5";
-
-// Executor tool-use loop only ever needs read-file -> run-validator -> respond.
-// Keeping this low bounds live cost/time if the model gets stuck in a loop.
 export const MAX_EXECUTOR_TURNS = 6;
 
-// $ per million tokens. Sonnet 5 figures are the introductory rate active
-// through 2026-08-31; standard $3 / $15 applies after that date.
 export const PRICING: Record<string, { input: number; output: number }> = {
   "claude-sonnet-5": { input: 2.0, output: 10.0 },
   "claude-haiku-4-5": { input: 1.0, output: 5.0 },
@@ -24,6 +16,9 @@ export type Usage = {
   cacheReadInputTokens: number;
 };
 
+/**
+ * Initializes a new token usage tracker with all counters set to zero.
+ */
 export function emptyUsage(): Usage {
   return {
     inputTokens: 0,
@@ -33,6 +28,9 @@ export function emptyUsage(): Usage {
   };
 }
 
+/**
+ * Combines two usage records by adding their respective token counters.
+ */
 export function addUsage(a: Usage, b: Usage): Usage {
   return {
     inputTokens: a.inputTokens + b.inputTokens,
@@ -42,20 +40,25 @@ export function addUsage(a: Usage, b: Usage): Usage {
   };
 }
 
-// Cache reads/writes are still input tokens, priced off the same input rate.
+/**
+ * Returns total input tokens billed, combining standard inputs and prompt cache reads/writes.
+ */
 export function billableInputTokens(usage: Usage): number {
   return usage.inputTokens + usage.cacheCreationInputTokens + usage.cacheReadInputTokens;
 }
 
-// This is an estimate for live console visibility, not a billing reconciliation.
+/**
+ * Estimates the US dollar cost of a run based on token counts and model pricing.
+ */
 export function estimateCostUsd(usage: Usage, model: string): number {
   const rate = PRICING[model];
   if (!rate) return 0;
   return (billableInputTokens(usage) * rate.input + usage.outputTokens * rate.output) / 1_000_000;
 }
 
-// Shared by executor.ts and judge.ts — both retry once on a retryable error
-// (rate limit, connection error, 5xx) then fail loudly. No silent fallback.
+/**
+ * Checks if an Anthropic API error is transient (rate limit, connection drop, 5xx) and can be retried.
+ */
 export function isRetryable(err: unknown): boolean {
   if (err instanceof Anthropic.RateLimitError) return true;
   if (err instanceof Anthropic.APIConnectionError) return true;
@@ -64,14 +67,23 @@ export function isRetryable(err: unknown): boolean {
   return false;
 }
 
+/**
+ * Extracts a readable error string from any caught error.
+ */
 export function describeError(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
+/**
+ * Pauses asynchronous execution for the given number of milliseconds.
+ */
 export function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+/**
+ * Normalizes an Anthropic SDK usage response into our internal Usage format.
+ */
 export function toUsage(u: Anthropic.Usage): Usage {
   return {
     inputTokens: u.input_tokens ?? 0,
@@ -81,6 +93,9 @@ export function toUsage(u: Anthropic.Usage): Usage {
   };
 }
 
+/**
+ * Calls the Anthropic Messages API with automatic single retry for transient network/server errors.
+ */
 export async function createWithRetry(
   client: Anthropic,
   params: Anthropic.MessageCreateParamsNonStreaming,
@@ -140,6 +155,9 @@ export type JudgeResult = {
   usage: Usage;
 };
 
+/**
+ * Computes passed/failed totals and pass rate percentage from a list of grades.
+ */
 export function summarizeGrades(grades: JudgeGrade[]): JudgeResult["summary"] {
   const passed = grades.filter((g) => g.passed).length;
   const total = grades.length;

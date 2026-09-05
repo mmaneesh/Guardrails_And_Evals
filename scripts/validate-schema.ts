@@ -4,59 +4,129 @@ import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { load } from "js-yaml";
 
-// ajv-formats' CJS types don't resolve as callable under NodeNext's
-// esModuleInterop — this is an upstream typing gap, not a runtime issue.
 const addFormats = addFormatsImport as unknown as (ajv: Ajv) => Ajv;
 
 type JsonSchema = {
-  type: string;
+  type?: string;
   required?: string[];
-  properties?: Record<string, any>;
+  properties?: Record<string, JsonSchema>;
+  items?: JsonSchema;
+  enum?: unknown[];
+  format?: string;
+  [key: string]: unknown;
 };
 
 type OpenApiSpec = {
-  components: { schemas: { Order: JsonSchema } };
+  components?: { schemas?: { Order?: JsonSchema } };
 };
 
-type EnumMismatch = {
+export type EnumMismatch = {
   field: string;
   actualValue: unknown;
   allowedValues: unknown[];
   note: string;
 };
 
-type StructuralViolation = {
+export type StructuralViolation = {
   field: string;
   issue: string;
   severity: "critical" | "medium";
 };
 
-type ValidationResult = {
-  structuralViolations: StructuralViolation[];
-  enumMismatches: EnumMismatch[];
-  undocumentedFields: { field: string; value: unknown }[];
+export type UndocumentedField = {
+  field: string;
+  value: unknown;
 };
 
+export type ValidationResult = {
+  structuralViolations: StructuralViolation[];
+  enumMismatches: EnumMismatch[];
+  undocumentedFields: UndocumentedField[];
+};
+
+/**
+ * Loads and parses an OpenAPI YAML file to extract the `Order` schema definition.
+ */
 function loadOrderSchema(specPath: string): JsonSchema {
   const raw = readFileSync(specPath, "utf-8");
   const spec = load(raw) as OpenApiSpec;
-  return spec.components.schemas.Order;
+  const schema = spec.components?.schemas?.Order;
+  if (!schema || typeof schema !== "object") {
+    throw new Error("Unsupported OpenAPI spec: expected components.schemas.Order");
+  }
+  return schema;
 }
 
-function splitEnumFromSchema(
-  schema: JsonSchema
-): [JsonSchema, Record<string, unknown[]>] {
-  const clone: JsonSchema = JSON.parse(JSON.stringify(schema));
-  const enumFields: Record<string, unknown[]> = {};
-  for (const [field, prop] of Object.entries(clone.properties ?? {})) {
-    if (prop.enum) {
-      enumFields[field] = prop.enum;
-      delete prop.enum;
+/**
+ * Removes enum constraints recursively so Ajv reports structural facts while
+ * enum mismatches remain a separate judgment input.
+ */
+function withoutEnums(schema: JsonSchema): JsonSchema {
+  const clone: JsonSchema = { ...schema };
+  delete clone.enum;
+  if (schema.properties) {
+    clone.properties = Object.fromEntries(
+      Object.entries(schema.properties).map(([field, property]) => [field, withoutEnums(property)])
+    );
+  }
+  if (schema.items) clone.items = withoutEnums(schema.items);
+  return clone;
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function findEnumMismatches(
+  schema: JsonSchema,
+  value: unknown,
+  path: string[] = []
+): EnumMismatch[] {
+  const mismatches: EnumMismatch[] = [];
+  if (schema.enum && !schema.enum.includes(value)) {
+    mismatches.push({
+      field: path.join(".") || "(root)",
+      actualValue: value,
+      allowedValues: schema.enum,
+      note: "Value not in declared enum - requires judgment on client impact, not an automatic failure.",
+    });
+  }
+  if (Array.isArray(value) && schema.items) {
+    value.forEach((item, index) => mismatches.push(...findEnumMismatches(schema.items!, item, [...path, String(index)])));
+  } else if (isObject(value) && schema.properties) {
+    for (const [field, property] of Object.entries(schema.properties)) {
+      if (field in value) mismatches.push(...findEnumMismatches(property, value[field], [...path, field]));
     }
   }
-  return [clone, enumFields];
+  return mismatches;
 }
 
+function findUndocumentedFields(
+  schema: JsonSchema,
+  value: unknown,
+  path: string[] = []
+): UndocumentedField[] {
+  if (Array.isArray(value) && schema.items) {
+    return value.flatMap((item, index) => findUndocumentedFields(schema.items!, item, [...path, String(index)]));
+  }
+  if (!isObject(value) || !schema.properties) return [];
+
+  const fields: UndocumentedField[] = [];
+  for (const [field, fieldValue] of Object.entries(value)) {
+    const fieldPath = [...path, field];
+    const property = schema.properties[field];
+    if (!property) {
+      fields.push({ field: fieldPath.join("."), value: fieldValue });
+      continue;
+    }
+    fields.push(...findUndocumentedFields(property, fieldValue, fieldPath));
+  }
+  return fields;
+}
+
+/**
+ * Assigns 'critical' severity if a violated field is required, or 'medium' otherwise.
+ */
 function severityFor(
   errorPath: string[],
   keyword: string,
@@ -71,6 +141,9 @@ function severityFor(
   return "medium";
 }
 
+/**
+ * Converts an Ajv ErrorObject into a dot-separated property path.
+ */
 function pathFromAjvError(err: ErrorObject): string[] {
   const base = err.instancePath.split("/").filter(Boolean);
   if (err.keyword === "required") {
@@ -79,13 +152,22 @@ function pathFromAjvError(err: ErrorObject): string[] {
   return base;
 }
 
+/**
+ * Deterministically validates an API response against an OpenAPI spec.
+ * Partitions results into 3 buckets: structural violations, enum mismatches, and undocumented fields.
+ */
 export function validate(specPath: string, responsePath: string): ValidationResult {
   const orderSchema = loadOrderSchema(specPath);
-  const [schemaNoEnum, enumFields] = splitEnumFromSchema(orderSchema);
-  const response = JSON.parse(readFileSync(responsePath, "utf-8"));
+  const schemaNoEnum = withoutEnums(orderSchema);
+  let response: unknown;
+  try {
+    response = JSON.parse(readFileSync(responsePath, "utf-8"));
+  } catch (err) {
+    throw new Error(`Invalid response JSON: ${err instanceof Error ? err.message : String(err)}`);
+  }
 
   const rootRequired = new Set(schemaNoEnum.required ?? []);
-  const itemSchema: { required?: string[] } = schemaNoEnum.properties?.items?.items ?? {};
+  const itemSchema = schemaNoEnum.properties?.items?.items ?? {};
   const itemRequired = new Set(itemSchema.required ?? []);
 
   const ajv = new Ajv({ allErrors: true, strict: false });
@@ -104,31 +186,80 @@ export function validate(specPath: string, responsePath: string): ValidationResu
     }
   );
 
-  const enumMismatches: EnumMismatch[] = [];
-  for (const [field, allowed] of Object.entries(enumFields)) {
-    if (field in response && !allowed.includes(response[field])) {
-      enumMismatches.push({
-        field,
-        actualValue: response[field],
-        allowedValues: allowed,
-        note: "Value not in declared enum - requires judgment on client impact, not an automatic failure.",
-      });
-    }
-  }
-
-  const declaredFields = new Set(Object.keys(orderSchema.properties ?? {}));
-  const undocumentedFields = Object.keys(response)
-    .filter((k) => !declaredFields.has(k))
-    .map((k) => ({ field: k, value: response[k] }));
+  const enumMismatches = findEnumMismatches(orderSchema, response);
+  const undocumentedFields = findUndocumentedFields(orderSchema, response);
 
   return { structuralViolations, enumMismatches, undocumentedFields };
 }
 
+/**
+ * Formats validation results into a structured human-readable terminal report.
+ */
+function printValidationReport(specPath: string, responsePath: string, result: ValidationResult): void {
+  console.log("\n============================================================");
+  console.log("              CONTRACT VALIDATION REPORT");
+  console.log("============================================================");
+  console.log(`Spec:     ${specPath}`);
+  console.log(`Response: ${responsePath}`);
+  console.log("Engine:   Deterministic Ajv Validator ($0.00 • Instant)");
+  console.log("------------------------------------------------------------");
+
+  // 1. Structural Violations
+  console.log(`\n[1] Structural Violations: ${result.structuralViolations.length} found`);
+  if (result.structuralViolations.length === 0) {
+    console.log("    ✓ None (all required fields and types match spec)");
+  } else {
+    for (const v of result.structuralViolations) {
+      console.log(`    ✗ [${v.severity.toUpperCase()}] ${v.field}: ${v.issue}`);
+    }
+  }
+
+  // 2. Enum Mismatches
+  console.log(`\n[2] Enum Mismatches: ${result.enumMismatches.length} found`);
+  if (result.enumMismatches.length === 0) {
+    console.log("    ✓ None (all enum values match declared spec)");
+  } else {
+    for (const m of result.enumMismatches) {
+      console.log(`    ⚠️  ${m.field}: received "${String(m.actualValue)}"`);
+      console.log(`       Allowed values: [${m.allowedValues.join(", ")}]`);
+      console.log(`       Note: Factual mismatch — requires downstream judgment`);
+    }
+  }
+
+  // 3. Undocumented Fields
+  console.log(`\n[3] Undocumented Fields: ${result.undocumentedFields.length} found`);
+  if (result.undocumentedFields.length === 0) {
+    console.log("    ✓ None (no unlisted additive fields)");
+  } else {
+    for (const u of result.undocumentedFields) {
+      console.log(`    ℹ  ${u.field}: ${JSON.stringify(u.value)} (additive field)`);
+    }
+  }
+
+  console.log("\n============================================================");
+  console.log(
+    `Summary: ${result.structuralViolations.length} Structural, ` +
+    `${result.enumMismatches.length} Enum Mismatches, ` +
+    `${result.undocumentedFields.length} Undocumented Fields`
+  );
+  console.log("============================================================\n");
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const [, , specPath, responsePath] = process.argv;
+  const args = process.argv.slice(2);
+  const jsonMode = args.includes("--json");
+  const filtered = args.filter((a) => a !== "--json");
+  const [specPath, responsePath] = filtered;
+
   if (!specPath || !responsePath) {
-    console.error("Usage: tsx validate-schema.ts <spec.yaml> <response.json>");
+    console.error("Usage: tsx validate-schema.ts <spec.yaml> <response.json> [--json]");
     process.exit(1);
   }
-  console.log(JSON.stringify(validate(specPath, responsePath), null, 2));
+
+  const result = validate(specPath, responsePath);
+  if (jsonMode) {
+    console.log(JSON.stringify(result, null, 2));
+  } else {
+    printValidationReport(specPath, responsePath, result);
+  }
 }

@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
 import { validate } from "./validate-schema.js";
 import {
@@ -14,15 +14,16 @@ import {
 } from "./config.js";
 
 const REPO_ROOT = process.cwd();
-
-// The executor gets exactly two narrow, dedicated tools instead of a
-// general shell — a deterministic guardrail a model can't be talked out
-// of. Only these repo-relative prefixes are readable.
 const ALLOWED_READ_PREFIXES = ["SKILL.md", "references/", "evals/files/"];
 
+/**
+ * Ensures requested file paths do not escape the sandbox boundary.
+ */
 function resolveSafePath(requestedPath: string): string {
   const resolved = resolve(REPO_ROOT, requestedPath);
-  const rel = relative(REPO_ROOT, resolved);
+  const canonicalRoot = realpathSync(REPO_ROOT);
+  const canonicalPath = realpathSync(resolved);
+  const rel = relative(canonicalRoot, canonicalPath);
   if (rel.startsWith("..") || isAbsolute(rel)) {
     throw new Error(`Path escapes the repository root: ${requestedPath}`);
   }
@@ -30,9 +31,12 @@ function resolveSafePath(requestedPath: string): string {
   if (!allowed) {
     throw new Error(`Path not permitted (must be SKILL.md, references/, or evals/files/): ${requestedPath}`);
   }
-  return resolved;
+  return canonicalPath;
 }
 
+/**
+ * Builds the cached system prompt combining SKILL.md and reference documents.
+ */
 function buildSystemPrompt(): Anthropic.TextBlockParam[] {
   const skill = readFileSync(resolve(REPO_ROOT, "SKILL.md"), "utf-8");
   const judgment = readFileSync(
@@ -40,8 +44,6 @@ function buildSystemPrompt(): Anthropic.TextBlockParam[] {
     "utf-8"
   );
   const combined = `${skill}\n\n---\n\n${judgment}`;
-  // Single cache_control breakpoint on the whole system block — this content
-  // is identical across every eval in a run, so it's worth caching.
   return [{ type: "text", text: combined, cache_control: { type: "ephemeral" } }];
 }
 
@@ -79,14 +81,27 @@ const TOOLS: Anthropic.Tool[] = [
   },
 ];
 
+/**
+ * Executes a tool requested by the model within sandboxed bounds.
+ */
 function executeTool(name: string, input: unknown): { output: unknown; isError: boolean } {
   try {
     if (name === "read_file") {
-      const { path } = input as { path: string };
+      if (!isRecord(input) || typeof input.path !== "string") {
+        throw new Error("read_file requires a string path");
+      }
+      const { path } = input;
       return { output: readFileSync(resolveSafePath(path), "utf-8"), isError: false };
     }
     if (name === "run_validator") {
-      const { specPath, responsePath } = input as { specPath: string; responsePath: string };
+      if (
+        !isRecord(input) ||
+        typeof input.specPath !== "string" ||
+        typeof input.responsePath !== "string"
+      ) {
+        throw new Error("run_validator requires string specPath and responsePath");
+      }
+      const { specPath, responsePath } = input;
       const result = validate(resolveSafePath(specPath), resolveSafePath(responsePath));
       return { output: result, isError: false };
     }
@@ -96,9 +111,13 @@ function executeTool(name: string, input: unknown): { output: unknown; isError: 
   }
 }
 
-// Strict no-fallback: retry once on a retryable failure, then surface a
-// clear error. No silent fallback model, no cached replay — the live demo
-// is meant to show real behavior, including real failure.
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Runs the agentic executor loop for an evaluation prompt, tracking turns, tools, and token metrics.
+ */
 export async function runExecutor(evalId: number, prompt: string): Promise<ExecutorResult> {
   const client = new Anthropic();
   const system = buildSystemPrompt();
@@ -115,6 +134,7 @@ export async function runExecutor(evalId: number, prompt: string): Promise<Execu
   const start = Date.now();
 
   for (let turn = 0; turn < MAX_EXECUTOR_TURNS; turn++) {
+
     totalSteps++;
 
     const response = await createWithRetry(

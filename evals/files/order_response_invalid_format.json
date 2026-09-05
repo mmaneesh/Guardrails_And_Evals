@@ -1,0 +1,15 @@
+{
+  "id": "a9448007-a9bb-479a-8d7c-a4a12d509110",
+  "status": "delivered",
+  "total_amount": 49.99,
+  "currency": "USD",
+  "customer_email": "not-a-valid-email",
+  "created_at": "yesterday-afternoon",
+  "items": [
+    {
+      "sku": "SKU-1042",
+      "quantity": 2,
+      "unit_price": 24.99
+    }
+  ]
+}

@@ -8,7 +8,11 @@
     "validate": "tsx scripts/validate-schema.ts",
     "validate:selftest": "tsx scripts/selftest-validator.ts",
     "selftest:mechanical": "tsx scripts/selftest-mechanical-checks.ts",
-    "run-evals": "tsx --env-file=.env scripts/run-evals.ts"
+    "run-evals": "tsx --env-file=.env scripts/run-evals.ts",
+    "evals:structural": "tsx scripts/run-evals.ts --tier structural",
+    "evals:process": "tsx --env-file=.env scripts/run-evals.ts --tier process",
+    "evals:semantic": "tsx --env-file=.env scripts/run-evals.ts --tier semantic",
+    "evals:all": "tsx --env-file=.env scripts/run-evals.ts --tier all"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",

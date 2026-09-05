@@ -1,0 +1,1288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<title>Guardrails &amp; Evals: Field Notes, Session Two</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,400;1,9..144,600&family=IBM+Plex+Mono:wght@400;500;600;700&family=Newsreader:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
+
+<style>
+/* ===========================================
+   CSS CUSTOM PROPERTIES — MONOCHROME SIGNAL THEME
+   =========================================== */
+:root {
+    --bg: #10140f;
+    --panel-bg: #191f18;
+    --ink: #ffffff;
+    --ink-soft: #e2ddd3;
+    --ink-faint: #b4ad9d;
+    --line: rgba(248,244,234,0.22);
+    --line-soft: rgba(248,244,234,0.12);
+    --accent: #ff9b5e;
+    --accent-2: #e0733a;
+    --accent-glow: rgba(255, 155, 94, 0.35);
+    --accent-grad: linear-gradient(90deg, var(--accent), var(--accent-2));
+
+    --font-display: 'Fraunces', serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --font-body-italic: 'Newsreader', serif;
+
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --duration-normal: 0.7s;
+
+    --stage-bg: #000000;
+    --slide-bg: #000000;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: var(--font-mono); }
+
+/* ===========================================
+   FIXED 16:9 STAGE: MANDATORY BASE STYLES
+   =========================================== */
+html, body { width:100%; height:100%; margin:0; overflow:hidden; background: var(--stage-bg, #000); }
+.deck-viewport { position:fixed; inset:0; overflow:hidden; background: var(--stage-bg,#000); }
+.deck-stage { position:absolute; left:0; top:0; width:1920px; height:1080px; overflow:hidden; transform-origin:0 0; background: var(--slide-bg,#fff); }
+.slide { position:absolute; inset:0; width:1920px; height:1080px; overflow:hidden; display:block; visibility:hidden; opacity:0; pointer-events:none; background: var(--slide-bg,#fff); }
+.slide.active, .slide.visible { visibility:visible; opacity:1; pointer-events:auto; z-index:1; }
+img, video, canvas, svg { max-width:100%; max-height:100%; }
+.deck-controls { position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:1000; }
+@media print {
+    html, body { width:1920px; height:auto; overflow:visible; background:#000; }
+    .deck-viewport { position:static; overflow:visible; background:#000; }
+    .deck-stage { position:static; width:auto; height:auto; transform:none !important; background:none; }
+    .slide { position:relative; display:block !important; visibility:visible !important; opacity:1 !important; pointer-events:auto !important; width:1920px; height:1080px; break-after:page; page-break-after:always; }
+    .slide:last-child { break-after:auto; page-break-after:auto; }
+    .deck-controls { display:none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration:0.01ms !important; transition-duration:0.2s !important; }
+}
+
+/* ===========================================
+   REVEAL / STAGGER — triggers on .slide.active
+   =========================================== */
+.reveal {
+    opacity:0;
+    transform: translateY(28px);
+    transition: opacity var(--duration-normal) var(--ease-out-expo),
+                transform var(--duration-normal) var(--ease-out-expo);
+}
+.slide.active .reveal { opacity:1; transform:translateY(0); }
+.reveal-d1{transition-delay:.10s} .reveal-d2{transition-delay:.24s}
+.reveal-d3{transition-delay:.38s} .reveal-d4{transition-delay:.52s}
+.reveal-d5{transition-delay:.66s} .reveal-d6{transition-delay:.80s}
+.reveal-d7{transition-delay:.94s} .reveal-d8{transition-delay:1.08s}
+.reveal-d9{transition-delay:1.22s} .reveal-d10{transition-delay:1.36s}
+
+/* ===========================================
+   STEP FRAGMENTS — click-to-reveal within a slide
+   =========================================== */
+.step {
+    opacity:0;
+    transform: translateY(24px);
+    transition: opacity 0.5s var(--ease-out-expo),
+                transform 0.5s var(--ease-out-expo);
+    pointer-events:none;
+}
+.step.step-shown { opacity:1; transform:translateY(0); pointer-events:auto; }
+
+/* ===========================================
+   SHARED COMPONENTS
+   =========================================== */
+.mn-slide { background: var(--bg); color: var(--ink); overflow:hidden; }
+
+.glow-soft { position:absolute; inset:0; pointer-events:none;
+    background: radial-gradient(900px 700px at 84% 18%, rgba(242,142,79,0.07), transparent 65%); }
+
+.hdr-kicker { position:absolute; top:64px; left:150px; font-family: var(--font-mono); font-size:16px; font-weight:600; letter-spacing:0.2em; color: var(--accent); }
+.hdr-page { position:absolute; top:64px; right:150px; font-family: var(--font-mono); font-size:16px; font-weight:600; letter-spacing:0.18em; color: var(--ink-faint); }
+.hdr-hair { position:absolute; left:150px; right:150px; top:118px; height:1px; background: var(--line-soft); }
+
+.mn-headline { font-family: var(--font-display); font-weight:700; letter-spacing:-0.02em; color: var(--ink); }
+.mn-body { font-family: var(--font-body-italic); font-style:italic; font-weight:400; color: var(--ink-soft); line-height:1.6; }
+.grad-text { background: var(--accent-grad); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.grad-underline { font-style:italic; font-weight:400; color: var(--accent); }
+
+.mn-footer { position:absolute; bottom:96px; left:150px; right:150px; display:flex; justify-content:space-between; align-items:flex-end; border-top:1px solid var(--line-soft); padding-top:26px; }
+.mn-presenter { font-family: var(--font-display); font-weight:600; font-size:22px; color: var(--ink); }
+.mn-meta { font-family: var(--font-mono); font-size:14px; letter-spacing:0.05em; color: var(--ink-faint); text-align:right; line-height:1.7; }
+
+/* ---- DATA TAG (provenance label — measured vs projected) ---- */
+.data-tag { display:inline-flex; align-items:center; gap:8px; font-family: var(--font-mono); font-size:13px;
+    letter-spacing:0.12em; font-weight:500; padding:4px 12px; border:1px solid var(--line); border-radius:100px;
+    color: var(--ink-soft); }
+.data-tag .dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.data-tag.measured { border-color: rgba(242,142,79,0.45); color: var(--ink); }
+.data-tag.measured .dot { background: var(--accent); }
+.data-tag.projected { color: var(--ink-soft); }
+.data-tag.projected .dot { background:transparent; border:1.5px dashed var(--ink-faint); width:6px; height:6px; }
+
+/* ---- LEDGER (3-column table — vocabulary, receipt) ---- */
+.ledger-head { display:grid; grid-template-columns: 340px 1fr 1fr; gap:40px; padding-bottom:16px; border-bottom:1px solid var(--line); }
+.ledger-head span { font-family: var(--font-mono); font-size:15px; letter-spacing:0.18em; color: var(--ink-faint); font-weight:500; }
+.ledger-row { display:grid; grid-template-columns: 340px 1fr 1fr; gap:40px; padding:24px 0; border-bottom:1px solid var(--line-soft); align-items:start; position:relative; transition: background 0.35s ease, border-color 0.35s ease; }
+.ledger-row.step-current { background: rgba(242,142,79,0.07); border-bottom-color: var(--accent); }
+.ledger-term { font-family: var(--font-display); font-weight:700; font-size:30px; color: var(--ink); }
+.ledger-kitchen { font-family: var(--font-body-italic); font-style:italic; font-weight:400; font-size:22px; color: var(--ink-soft); line-height:1.5; }
+.ledger-code { font-family: var(--font-mono); font-size:19px; color: var(--ink-soft); line-height:1.55; }
+.ledger-code code { color: var(--ink); }
+
+/* ---- CARD (best practices) ---- */
+.skill-card { border:1px solid var(--line); border-radius:8px; padding:26px 30px; position:relative; display:flex; flex-direction:column; gap:10px; transition: border-color 0.35s ease, box-shadow 0.35s ease, background 0.35s ease; align-self:stretch; }
+.skill-card.step-current { border-color: var(--accent); background: rgba(242,142,79,0.05); box-shadow: 0 0 0 1px var(--accent), 0 10px 26px rgba(242,142,79,0.16); }
+.skill-card .sc-name { font-family: var(--font-display); font-weight:700; font-size:25px; color: var(--ink); letter-spacing:-0.01em; }
+.skill-card .sc-desc { font-family: var(--font-body-italic); font-style:italic; font-weight:400; font-size:19px; color: var(--ink-soft); line-height:1.5; }
+
+/* ---- TERM-WIN (terminal panels — live demo) ---- */
+.term-win { border-radius:10px; overflow:hidden; border:1px solid var(--line); display:flex; flex-direction:column; background: var(--panel-bg); transition: border-color 0.35s ease, box-shadow 0.35s ease; }
+.term-win.step-current { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 12px 30px rgba(242,142,79,0.16); }
+.term-bar { height:44px; display:flex; align-items:center; gap:9px; padding:0 18px; background: rgba(248,244,234,0.03); border-bottom:1px solid var(--line-soft); }
+.term-dot { width:10px; height:10px; border-radius:50%; background: #3a3a3a; }
+.term-title { margin-left:12px; font-family: var(--font-mono); font-size:15px; color: var(--ink-faint); letter-spacing:0.05em; }
+.term-body { flex:1; padding:24px 28px; font-family: var(--font-mono); font-size:18px; line-height:1.85; }
+.term-body .dim { color: #b8b1a0; font-weight:500; }
+.term-body .good { color: var(--accent); }
+.term-body .pending { color: #ffd2a6; font-weight:500; }
+.term-body .tree-line { white-space:pre; }
+
+/* ---- LOG-ENTRY (our story) ---- */
+.log-entry { border-left:2px solid var(--line); padding-left:26px; transition: border-color 0.35s ease, background 0.35s ease; }
+.log-entry.step-current { border-left:2px solid var(--accent); background: rgba(242,142,79,0.07); box-shadow: inset -1px 0 0 0 rgba(242,142,79,0.2); border-radius:0 4px 4px 0; }
+.log-tag { font-family: var(--font-mono); font-size:16px; letter-spacing:0.15em; color: var(--accent); font-weight:700; margin-bottom:12px; }
+.log-entry.step-current .log-tag { color: var(--accent); }
+.log-body { font-family: var(--font-body-italic); font-style:italic; font-weight:400; font-size:20px; color: var(--ink-soft); line-height:1.5; }
+
+/* ---- TRAIL-PANEL (airbag) ---- */
+.trail-panel { position:absolute; top:400px; width:430px; height:430px; border:1px solid var(--line); border-radius:8px; padding:26px; display:flex; flex-direction:column; }
+.trail-panel .tp-label { font-family: var(--font-mono); font-size:15px; letter-spacing:0.16em; color: var(--ink-faint); flex-shrink:0; }
+.trail-panel svg { margin-top:18px; width:100%; height:320px; flex-shrink:0; }
+
+/* ---- ARCHITECTURAL VECTOR PYRAMID (SPACIOUS & UNCLUTTERED) ---- */
+.pyramid-container { position:absolute; top:250px; left:140px; width:720px; height:390px; }
+.pyr-vector-stage { width:100%; height:100%; overflow:visible; }
+.pyr-tier-group { cursor:pointer; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease; }
+.pyr-tier-group:hover { filter: brightness(1.15) drop-shadow(0 0 20px rgba(255,155,94,0.45)); }
+.pyr-tier-plate { transition: all 0.3s ease; }
+.pyr-tier-title { font-family: var(--font-display); font-weight:700; text-anchor:middle; }
+.pyr-tier-sub { font-family: var(--font-mono); font-weight:600; text-anchor:middle; }
+
+.pyr-connect-line { stroke: rgba(255,155,94,0.45); stroke-width: 2; stroke-dasharray: 5 4; fill: none; }
+
+.pyr-annotations-cards { position:absolute; top:250px; left:910px; right:150px; display:flex; flex-direction:column; gap:14px; }
+.pyr-card { height: 118px; box-sizing: border-box; background: rgba(25,31,24,0.85); border: 1px solid var(--line); border-left: 5px solid var(--line); border-radius: 8px; padding: 12px 20px; transition: all 0.35s ease; backdrop-filter: blur(10px); display:flex; flex-direction:column; justify-content:center; }
+.pyr-card.t3 { border-left-color: var(--accent); background: linear-gradient(90deg, rgba(255,155,94,0.14), rgba(25,31,24,0.85)); }
+.pyr-card.t2 { border-left-color: #a2cf96; background: linear-gradient(90deg, rgba(162,207,150,0.1), rgba(25,31,24,0.85)); }
+.pyr-card.t1 { border-left-color: #8ec3f8; background: linear-gradient(90deg, rgba(142,195,248,0.1), rgba(25,31,24,0.85)); }
+.pyr-card:hover { transform: translateX(6px); border-color: rgba(255,155,94,0.6); }
+.pyr-card .c-tag { font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.16em; font-weight: 700; display:flex; align-items:center; gap:8px; margin-bottom: 2px; }
+.pyr-card.t3 .c-tag { color: var(--accent); }
+.pyr-card.t2 .c-tag { color: #a2cf96; }
+.pyr-card.t1 .c-tag { color: #8ec3f8; }
+.pyr-card .c-title { font-family: var(--font-display); font-size: 21px; font-weight: 700; color: var(--ink); line-height:1.2; }
+.pyr-card .c-desc { font-family: var(--font-mono); font-size: 14px; color: var(--ink-soft); margin-top: 2px; line-height:1.4; }
+
+/* 2-Column Split Receipt Deck */
+.receipt-deck { position:absolute; top:680px; left:140px; right:150px; display:flex; flex-direction:column; gap:10px; }
+.receipt-deck-header { display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line-soft); padding-bottom:6px; }
+.rb-label { font-family:var(--font-mono); font-size:14px; font-weight:700; letter-spacing:0.2em; color:var(--accent); }
+.rb-subtitle { font-family:var(--font-mono); font-size:13px; color:var(--ink-faint); letter-spacing:0.05em; }
+.receipt-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+.receipt-col { background:rgba(25,31,24,0.85); border:1px solid var(--line); border-radius:8px; padding:14px 20px; display:flex; flex-direction:column; gap:6px; backdrop-filter:blur(8px); }
+.receipt-col.naive { border-left:4px solid var(--ink-faint); }
+.receipt-col.tiered { border-left:4px solid var(--accent); background:linear-gradient(90deg, rgba(255,155,94,0.1), rgba(25,31,24,0.85)); }
+.rc-header { display:flex; align-items:center; justify-content:space-between; }
+.rc-stat { font-family:var(--font-mono); font-size:15px; font-weight:600; color:var(--ink-soft); }
+.rc-stat.highlight { color:#ffffff; font-weight:700; }
+.rc-badge { background:var(--accent); color:#10140f; font-size:12px; font-weight:700; padding:2px 8px; border-radius:100px; margin-left:6px; }
+.rc-body { font-family:var(--font-body-italic); font-style:italic; font-weight:400; font-size:16px; color:var(--ink-soft); line-height:1.4; }
+
+/* ---- TAKEAWAY ROW ---- */
+.takeaway-row { display:flex; align-items:baseline; gap:34px; }
+.takeaway-num { font-family: var(--font-display); font-weight:700; font-size:42px; width:70px; flex-shrink:0; }
+.takeaway-text { font-family: var(--font-display); font-weight:700; font-size:32px; color: var(--ink); line-height:1.3; }
+.takeaway-sub { font-family: var(--font-body-italic); font-style:italic; font-weight:400; font-size:18px; color: var(--ink-soft); margin-top:6px; }
+
+/* ---- STAT ROW ---- */
+.stat-row { display:flex; gap:70px; }
+.stat-item { display:flex; flex-direction:column; }
+.stat-num { font-family: var(--font-display); font-weight:700; font-size:54px; line-height:1; }
+.stat-label { font-family: var(--font-mono); font-size:16px; font-weight:600; letter-spacing:0.12em; color: var(--ink-soft); margin-top:8px; }
+
+/* Slide-specific styles are namespaced by slide id below. */
+
+/* ---- SLIDE 1: TITLE ---- */
+#s1 .headline { position:absolute; top:395px; left:146px; width:1450px; font-size:112px; line-height:1; white-space:nowrap; }
+#s1 .kicker { position:absolute; top:96px; left:150px; font-family:var(--font-mono); font-size:15px; letter-spacing:0.18em; color:var(--ink-faint); }
+#s1 .page { position:absolute; top:96px; right:150px; font-family:var(--font-mono); font-size:15px; letter-spacing:0.18em; color:var(--ink-faint); }
+#s1 .hair { position:absolute; left:150px; right:150px; top:170px; height:1px; background:var(--line-soft); }
+#s1 .subtitle { position:absolute; top:640px; left:150px; width:820px; font-size:23px; }
+#s1 .hero-emblem-wrap { position:absolute; right:130px; top:330px; width:340px; height:340px; display:flex; align-items:center; justify-content:center; }
+.emblem-ambient-glow { position:absolute; inset:-40px; border-radius:50%; background: radial-gradient(circle, rgba(255,155,94,0.22) 0%, rgba(209,111,56,0.08) 50%, transparent 70%); filter:blur(24px); animation: pulseGlow 4s ease-in-out infinite alternate; }
+.hero-emblem-svg { width:100%; height:100%; overflow:visible; }
+.radar-ring.outer { transform-origin:170px 170px; animation: spinClockwise 28s linear infinite; }
+.radar-ring.mid { transform-origin:170px 170px; animation: spinCounterClockwise 20s linear infinite; }
+@keyframes pulseGlow {
+  0% { transform: scale(0.92); opacity: 0.6; }
+  100% { transform: scale(1.12); opacity: 1; }
+}
+@keyframes spinClockwise { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes spinCounterClockwise { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+
+/* ---- SLIDE 2: AGENDA ---- */
+#s2 .headline { position:absolute; top:290px; left:146px; font-size:76px; }
+#s2 .agenda-list { position:absolute; top:400px; left:150px; right:400px; display:flex; flex-direction:column; }
+.agenda-row { display:flex; align-items:center; gap:28px; padding:14px 0; border-bottom:1px solid var(--line-soft); position:relative; transition: background 0.35s ease; }
+.agenda-row.step-current { background: rgba(242,142,79,0.07); }
+.agenda-num { width:56px; font-family:var(--font-mono); font-size:18px; color:var(--ink-faint); flex-shrink:0; }
+.agenda-title { font-family:var(--font-display); font-weight:600; font-size:34px; color:var(--ink); }
+.agenda-row.step-current .agenda-title { color:var(--ink); }
+.agenda-row.step-current .agenda-num { color:var(--accent); }
+
+/* ---- SLIDE 3: THE ANALOGY ---- */
+#s3 .headline { position:absolute; top:172px; left:146px; width:960px; font-size:60px; line-height:1.14; }
+#s3 .lead-body { position:absolute; top:370px; left:150px; width:800px; font-size:24px; }
+#s3 .pull { position:absolute; top:570px; left:150px; width:800px; font-size:40px; font-family:var(--font-display); font-weight:700; line-height:1.2; }
+#s3 .pull-sub { position:absolute; top:720px; left:150px; width:800px; font-size:20px; color:var(--ink-soft); font-family:var(--font-mono); line-height:1.5; }
+#s3 .tp-railing { width:480px; height:480px; left:1235px; top:300px; }
+#s3 .tp-railing svg { height:390px; }
+
+/* ---- SLIDE 4: VOCABULARY ---- */
+#s4 .headline { position:absolute; top:172px; left:146px; font-size:56px; }
+#s4 .ledger { position:absolute; top:340px; left:150px; right:150px; bottom:280px; }
+#s4 .footnote { position:absolute; top:790px; left:150px; width:1600px; font-family:var(--font-body-italic); font-style:italic; font-size:23px; line-height:1.6; color:var(--ink-soft); font-weight:500; }
+
+/* ---- SLIDE 5: OUR STORY ---- */
+#s5 .headline { position:absolute; top:172px; left:146px; font-size:54px; }
+#s5 .data-tag { position:absolute; top:300px; left:150px; }
+#s5 .stat-row { position:absolute; top:352px; left:150px; }
+#s5 .log { position:absolute; top:520px; left:150px; right:150px; bottom:150px; display:grid; grid-template-columns:repeat(4,1fr); gap:36px; }
+
+/* ---- SLIDE 6: THE PYRAMID (absorbs the receipt table) ---- */
+#s6 .headline { position:absolute; top:135px; left:146px; font-size:52px; }
+#s6 .pyramid { top:280px; left:190px; width:720px; }
+#s6 .pyr-annotations { top:280px; left:1020px; right:150px; }
+#s6 .pyr-receipt-label { position:absolute; top:710px; left:150px; }
+#s6 .ledger { position:absolute; top:740px; left:150px; right:150px; }
+#s6 .ledger .ledger-head { padding-bottom:12px; }
+#s6 .ledger .ledger-row { padding:12px 0; align-items:center; }
+#s6 .ledger .ledger-term { font-size:23px; display:flex; align-items:center; gap:14px; }
+#s6 .ledger .ledger-kitchen, #s6 .ledger .ledger-code { font-size:18px; }
+
+/* ---- SLIDE 7: BEST PRACTICES ---- */
+#s7 .headline { position:absolute; top:172px; left:146px; font-size:54px; }
+#s7 .bp-cols { position:absolute; top:270px; left:150px; right:150px; bottom:100px; display:grid; grid-template-columns:1fr 1fr; grid-template-rows: auto 1fr 1fr 1fr; row-gap:22px; column-gap:64px; align-items:stretch; }
+.bp-col-label { font-family:var(--font-mono); font-size:16px; letter-spacing:0.2em; color:var(--ink-faint); }
+
+/* ---- SLIDE 8: LIVE DEMO ---- */
+#s8 .headline { position:absolute; top:150px; left:146px; font-size:52px; }
+#s8 .prompt-box { position:absolute; top:280px; left:150px; right:150px; border-left:2px solid; border-image:var(--accent-grad) 1; padding:8px 0 8px 28px; }
+#s8 .prompt-box .pq { font-family:var(--font-display); font-size:24px; color:var(--ink); line-height:1.4; }
+#s8 .prompt-box .pn { font-family:var(--font-mono); font-size:15px; color:var(--ink-faint); margin-top:8px; }
+#s8 .terms { position:absolute; top:430px; left:150px; right:150px; bottom:150px; display:grid; grid-template-columns:1fr 1fr; gap:40px; }
+
+/* ---- SLIDE 9: TAKEAWAYS ---- */
+#s9 .headline { position:absolute; top:290px; left:146px; font-size:70px; }
+#s9 .takeaways { position:absolute; top:450px; left:150px; right:200px; display:flex; flex-direction:column; gap:36px; }
+
+/* ---- SLIDE 10: CLOSING ---- */
+#s10 .quote { position:absolute; top:340px; left:50%; transform:translateX(-50%); width:1500px; text-align:center;
+    font-family: var(--font-display); font-weight:700; font-size:56px; line-height:1.3; color: var(--ink); }
+#s10 .qa { position:absolute; top:700px; left:50%; transform:translateX(-50%); font-family: var(--font-mono);
+    font-size:26px; letter-spacing:0.4em; color: var(--ink-faint); font-weight:600; }
+#s10 .hair { position:absolute; left:50%; transform:translateX(-50%); bottom:230px; width:120px; height:2px; background:var(--accent-grad); }
+
+/* ===========================================
+   EDIT MODE (default inline editing affordance)
+   =========================================== */
+.edit-hotzone { position:fixed; top:0; left:0; width:80px; height:80px; z-index:10000; cursor:pointer; }
+.edit-toggle { position:fixed; top:16px; left:16px; z-index:10001; width:44px; height:44px; border-radius:50%;
+    background: rgba(248,244,234,0.92); border:none; font-size:20px; cursor:pointer;
+    opacity:0; pointer-events:none; transition: opacity 0.3s ease; }
+.edit-toggle.show, .edit-toggle.active { opacity:1; pointer-events:auto; }
+.edit-toggle.active { background: var(--accent); }
+[contenteditable="true"] { outline: 1px dashed var(--accent); outline-offset:4px; cursor:text; }
+.save-toast { position:fixed; bottom:70px; left:50%; transform:translateX(-50%); background: var(--accent); color:#2a1608;
+    font-family: var(--font-mono); font-size:14px; letter-spacing:0.08em; padding:10px 20px; border-radius:20px;
+    opacity:0; transition: opacity 0.3s ease; z-index:10002; pointer-events:none; }
+.save-toast.show { opacity:1; }
+
+/* ===========================================
+   DECK CONTROLS (outside the slide stage)
+   =========================================== */
+.deck-controls { display:flex; align-items:center; gap:18px; font-family: var(--font-mono); }
+.dc-arrow { width:38px; height:38px; border-radius:50%; border:1px solid rgba(248,244,234,0.2); background: rgba(0,0,0,0.6);
+    color: var(--ink-faint); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; transition: all 0.2s ease; }
+.dc-arrow:hover { border-color: var(--accent); color: var(--accent); }
+.dc-dots { display:flex; gap:9px; }
+.dc-dot { width:8px; height:8px; border-radius:50%; background: rgba(248,244,234,0.2); cursor:pointer; transition: background 0.2s ease, transform 0.2s ease; }
+.dc-dot.active { background: var(--accent); transform: scale(1.3); }
+
+/* ===========================================
+   MOBILE ACCESSIBILITY — zoom control + orientation nudge
+   =========================================== */
+.stage-sizer { position:relative; }
+.deck-viewport.zoomed { overflow:auto; -webkit-overflow-scrolling:touch; }
+
+.zoom-toggle { display:none; font-size:18px; }
+.zoom-toggle.active { border-color: var(--accent); color: var(--accent); background: rgba(242,142,79,0.12); }
+@media (max-width: 900px), (max-height: 500px) {
+    .zoom-toggle { display:flex; }
+}
+
+.mobile-nudge {
+    position:fixed; left:50%; top:14px; transform:translateX(-50%);
+    z-index:1001; display:none; align-items:center; gap:10px;
+    background: rgba(10,10,10,0.92); border:1px solid rgba(248,244,234,0.2);
+    color: var(--ink-soft); font-family: var(--font-mono);
+    font-size:13px; line-height:1.4; padding:10px 14px; border-radius:8px;
+    max-width:88vw; box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+}
+.mobile-nudge strong { color: var(--accent); }
+.mobile-nudge.show { display:flex; }
+.mobile-nudge button {
+    background:none; border:none; color: var(--ink-soft); font-size:18px;
+    line-height:1; cursor:pointer; padding:0 0 0 6px; flex-shrink:0;
+}
+.mobile-nudge button:hover { color: var(--ink); }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
+</head>
+<body>
+<div class="deck-viewport" id="deckViewport">
+  <div class="stage-sizer" id="stageSizer">
+  <main class="deck-stage" id="deckStage">
+
+    <!-- ============ SLIDE 1 — TITLE ============ -->
+    <section class="slide active mn-slide" id="s1">
+      <div class="glow-soft"></div>
+      <div class="kicker reveal reveal-d1">FIELD NOTES &middot; SESSION 02</div>
+      <div class="page reveal reveal-d1">01 / 10</div>
+      <div class="hair reveal reveal-d1"></div>
+
+      <div class="mn-headline headline reveal reveal-d3" contenteditable="false">Guardrails &amp; <span class="grad-underline">Evals</span>.</div>
+      <div class="mn-body subtitle reveal reveal-d4" contenteditable="false">How to build hard constraints for AI, and crash-test them until you can trust they hold.</div>
+
+      <div class="hero-emblem-wrap reveal reveal-d5">
+        <div class="emblem-ambient-glow"></div>
+        <svg class="hero-emblem-svg" viewBox="0 0 340 340" fill="none">
+          <defs>
+            <radialGradient id="coreAura" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#ff9b5e" stop-opacity="0.35"/>
+              <stop offset="60%" stop-color="#e0733a" stop-opacity="0.1"/>
+              <stop offset="100%" stop-color="transparent" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="shieldGradPlate" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ff9b5e" stop-opacity="0.25"/>
+              <stop offset="50%" stop-color="#191f18" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#d16f38" stop-opacity="0.3"/>
+            </linearGradient>
+            <linearGradient id="shieldBorderGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#ffb07c"/>
+              <stop offset="50%" stop-color="#ff9b5e"/>
+              <stop offset="100%" stop-color="#803810"/>
+            </linearGradient>
+            <filter id="neonGlow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="6" result="blur"/>
+              <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+
+          <!-- Outer Radar Rings -->
+          <circle class="radar-ring outer" cx="170" cy="170" r="158" stroke="rgba(255,155,94,0.25)" stroke-width="1.5" stroke-dasharray="8 8"/>
+          <circle class="radar-ring mid" cx="170" cy="170" r="142" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+          
+          <!-- Tactical Reticle Brackets -->
+          <path class="reticle-corner" d="M30 170 A140 140 0 0 1 170 30" stroke="rgba(255,155,94,0.4)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <path class="reticle-corner" d="M310 170 A140 140 0 0 1 170 310" stroke="rgba(255,155,94,0.4)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          
+          <!-- Core Energy Glow -->
+          <circle cx="170" cy="170" r="110" fill="url(#coreAura)"/>
+          
+          <!-- Outer Faceted Shield Shell -->
+          <polygon class="shield-outer-shell" points="170,42 272,78 272,175 170,285 68,175 68,78" 
+                   fill="url(#shieldGradPlate)" stroke="url(#shieldBorderGrad)" stroke-width="3" filter="url(#neonGlow)"/>
+
+          <!-- Geometric Guardrail Grid Lines -->
+          <g class="shield-inner-grid" stroke="rgba(255,255,255,0.2)" stroke-width="1.5">
+            <line x1="170" y1="45" x2="170" y2="280"/>
+            <line x1="68" y1="120" x2="272" y2="120"/>
+            <line x1="68" y1="175" x2="272" y2="175"/>
+            <polyline points="105,92 170,140 235,92" fill="none"/>
+            <polyline points="105,205 170,165 235,205" fill="none"/>
+          </g>
+
+          <!-- Floating Kinetic Nodes -->
+          <circle class="kinetic-node n1" cx="170" cy="42" r="5" fill="#ff9b5e"/>
+          <circle class="kinetic-node n2" cx="272" cy="78" r="4" fill="#ff9b5e"/>
+          <circle class="kinetic-node n3" cx="272" cy="175" r="4" fill="#ff9b5e"/>
+          <circle class="kinetic-node n4" cx="170" cy="285" r="5" fill="#ff9b5e"/>
+          <circle class="kinetic-node n5" cx="68" cy="175" r="4" fill="#ff9b5e"/>
+          <circle class="kinetic-node n6" cx="68" cy="78" r="4" fill="#ff9b5e"/>
+
+          <!-- High-Voltage Centered Checkmark -->
+          <path class="hero-check" d="M125 168 L156 198 L218 132" fill="none" stroke="#ffffff" stroke-width="8"
+                stroke-linecap="round" stroke-linejoin="round" filter="url(#neonGlow)"/>
+        </svg>
+      </div>
+
+      <div class="mn-footer reveal reveal-d6">
+        <div class="mn-presenter" contenteditable="false">Maneesh Maddala</div>
+        <div class="mn-meta" contenteditable="false">MINISTRY OF TESTING &middot; AI CHAPTER<br>23 SEPTEMBER 2026</div>
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 2 — AGENDA ============ -->
+    <section class="slide mn-slide" id="s2">
+      <div class="hdr-kicker reveal reveal-d1">AGENDA</div>
+      <div class="hdr-page reveal reveal-d1">02 / 10</div>
+      <div class="hdr-hair reveal reveal-d1"></div>
+      <div class="mn-headline headline reveal reveal-d2">What We'll Cover</div>
+
+      <div class="agenda-list">
+        <div class="agenda-row step" data-step="1"><div class="agenda-num">01</div><div class="agenda-title">The Analogy</div></div>
+        <div class="agenda-row step" data-step="2"><div class="agenda-num">02</div><div class="agenda-title">The Vocabulary</div></div>
+        <div class="agenda-row step" data-step="3"><div class="agenda-num">03</div><div class="agenda-title">Our Story</div></div>
+        <div class="agenda-row step" data-step="4"><div class="agenda-num">04</div><div class="agenda-title">The Pyramid</div></div>
+        <div class="agenda-row step" data-step="5"><div class="agenda-num">05</div><div class="agenda-title">Best Practices</div></div>
+        <div class="agenda-row step" data-step="6"><div class="agenda-num">06</div><div class="agenda-title">Live Demo</div></div>
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 3 — THE ANALOGY ============ -->
+    <section class="slide mn-slide" id="s3">
+      <div class="hdr-kicker reveal reveal-d1">THE ANALOGY</div>
+      <div class="hdr-page reveal reveal-d1">03 / 10</div>
+      <div class="hdr-hair reveal reveal-d1"></div>
+      <div class="mn-headline headline reveal reveal-d2">There's an airbag<br>behind every wheel.</div>
+
+      <div class="mn-body lead-body step" data-step="1">It doesn't care how the crash happened: black ice, a distracted turn, a deer in the road. It just has to deploy.</div>
+
+      <div class="trail-panel tp-railing step" data-step="2">
+        <div class="tp-label">HARD SAFETY CONSTRAINT</div>
+        <svg viewBox="0 0 380 320" class="airbag-svg">
+          <defs>
+            <radialGradient id="airbagInflateGrad" cx="50%" cy="45%" r="50%">
+              <stop offset="0%" stop-color="#ffb580"/>
+              <stop offset="60%" stop-color="#f28e4f"/>
+              <stop offset="100%" stop-color="#b84c17"/>
+            </radialGradient>
+            <filter id="airbagGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#ff9b5e" flood-opacity="0.4"/>
+            </filter>
+          </defs>
+
+          <!-- Steering Column & Outer Wheel Structure -->
+          <g class="steering-wheel-group">
+            <!-- Steering Wheel Outer Rim -->
+            <circle cx="190" cy="180" r="105" stroke="rgba(248,244,234,0.4)" stroke-width="12" fill="none"/>
+            <circle cx="190" cy="180" r="105" stroke="#ff9b5e" stroke-width="2" stroke-dasharray="8 14" fill="none" opacity="0.6"/>
+            
+            <!-- Steering Spokes -->
+            <g stroke="rgba(248,244,234,0.6)" stroke-width="6" stroke-linecap="round">
+              <line x1="190" y1="180" x2="190" y2="80"/>
+              <line x1="190" y1="180" x2="105" y2="235"/>
+              <line x1="190" y1="180" x2="275" y2="235"/>
+            </g>
+            
+            <!-- Central Steering Hub Base -->
+            <circle cx="190" cy="180" r="32" fill="#191f18" stroke="#ff9b5e" stroke-width="3"/>
+          </g>
+
+          <!-- Dynamic Deployment Shockwave Ring -->
+          <circle class="airbag-shockwave" cx="190" cy="135" r="30" stroke="#ffb580" stroke-width="3" fill="none" opacity="0"/>
+
+          <!-- High-Speed Inflating Airbag Cushion -->
+          <g class="airbag-cushion-wrapper" filter="url(#airbagGlow)">
+            <ellipse class="airbag-cushion" cx="190" cy="135" rx="88" ry="78" fill="url(#airbagInflateGrad)" stroke="#ffffff" stroke-width="2.5"/>
+            <!-- Cushion Seam Details -->
+            <path class="airbag-seams" d="M130 135 Q190 105 250 135 M190 60 Q190 135 190 210" stroke="rgba(255,255,255,0.45)" stroke-width="2" stroke-linecap="round" fill="none"/>
+          </g>
+
+          <!-- Explosive Air Pressure Rays -->
+          <g class="airbag-rays" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round">
+            <line x1="90" y1="75" x2="55" y2="50"/>
+            <line x1="290" y1="75" x2="325" y2="50"/>
+            <line x1="125" y1="40" x2="100" y2="10"/>
+            <line x1="255" y1="40" x2="280" y2="10"/>
+            <line x1="75" y1="140" x2="35" y2="140"/>
+            <line x1="305" y1="140" x2="345" y2="140"/>
+          </g>
+        </svg>
+      </div>
+
+      <div class="pull step" data-step="3">A guardrail is like <span class="grad-underline">the airbag.</span></div>
+      <div class="pull-sub step" data-step="3">A hard constraint that deploys regardless of how the crash happened.</div>
+    </section>
+
+    <!-- ============ SLIDE 4 — THE VOCABULARY ============ -->
+    <section class="slide mn-slide" id="s4">
+      <div class="hdr-kicker reveal reveal-d1">THE VOCABULARY</div>
+      <div class="hdr-page reveal reveal-d1">04 / 10</div>
+      <div class="hdr-hair reveal reveal-d1"></div>
+      <div class="mn-headline headline reveal reveal-d2">One holds. One checks.</div>
+
+      <div class="ledger">
+        <div class="ledger-head reveal reveal-d3"><span>TERM</span><span>WHAT IT IS</span><span>FROM THIS REPO</span></div>
+
+        <div class="ledger-row step" data-step="1">
+          <div class="ledger-term">Guardrail</div>
+          <div class="ledger-kitchen">The airbag itself: a constraint that has to be there and has to work, no matter what.</div>
+          <div class="ledger-code">Guardrail #4: never declare a contract change "safe to ship"</div>
+        </div>
+        <div class="ledger-row step" data-step="2">
+          <div class="ledger-term">Eval</div>
+          <div class="ledger-kitchen">How you check the airbag: is it there, is it wired, does it actually deploy under real force.</div>
+          <div class="ledger-code">Eval 12 (refusal): does the skill actually refuse when asked to call it safe?</div>
+        </div>
+        <div class="ledger-row step" data-step="3">
+          <div class="ledger-term">Trial</div>
+          <div class="ledger-kitchen">One run of the crash test. It proves the airbag worked once, not that it always will.</div>
+          <div class="ledger-code">One run of eval 12. Passing once proves that run passed. Nothing about the next one.</div>
+        </div>
+      </div>
+
+      <div class="footnote step" data-step="4">A guardrail is a promise.<br>An eval is how you find out if the promise was kept.<br>A trial is one time you checked.</div>
+    </section>
+
+    <!-- ============ SLIDE 5 — OUR STORY ============ -->
+    <section class="slide mn-slide" id="s5">
+      <div class="hdr-kicker reveal reveal-d1">OUR STORY</div>
+      <div class="hdr-page reveal reveal-d1">05 / 10</div>
+      <div class="hdr-hair reveal reveal-d1"></div>
+      <div class="mn-headline headline reveal reveal-d2">Lessons we learned the hard way</div>
+
+      <div class="data-tag measured step" data-step="1"><span class="dot"></span>MEASURED &middot; REAL RUN</div>
+
+      <div class="stat-row step" data-step="1">
+        <div class="stat-item"><div class="stat-num grad-text" id="statEvals" data-target="10">10</div><div class="stat-label">EVALS BENCHMARKED</div></div>
+        <div class="stat-item"><div class="stat-num grad-text" id="statInvocations" data-target="22">22</div><div class="stat-label">AGENT INVOCATIONS</div></div>
+        <div class="stat-item"><div class="stat-num grad-text" id="statTokens" data-target="450">~450K</div><div class="stat-label">TOKENS SPENT</div></div>
+      </div>
+
+      <div class="log">
+        <div class="log-entry step" data-step="2">
+          <div class="log-tag">WHAT WE TRIED</div>
+          <div class="log-body">LLM executor + LLM judge, on every single eval: the same heavy machinery for every check.</div>
+        </div>
+        <div class="log-entry step" data-step="3">
+          <div class="log-tag">WHERE IT BROKE</div>
+          <div class="log-body">10 evals, ~450K tokens, 22 agent invocations. This doesn't scale.</div>
+        </div>
+        <div class="log-entry step" data-step="4">
+          <div class="log-tag">WHAT WE CHANGED</div>
+          <div class="log-body">Tiered the evals by what they actually need to verify, not by what's easiest to write.</div>
+        </div>
+        <div class="log-entry step" data-step="5">
+          <div class="log-tag">WHAT IT DOES NOW</div>
+          <div class="log-body">Cheap tiers run on every change. The expensive tier runs deliberately.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 6 — THE PYRAMID ============ -->
+    <section class="slide mn-slide" id="s6">
+      <div class="hdr-kicker reveal reveal-d1">THE PYRAMID</div>
+      <div class="hdr-page reveal reveal-d1">06 / 10</div>
+      <div class="hdr-hair reveal reveal-d1"></div>
+      <div class="mn-headline headline reveal reveal-d2">Same shape you already test in.</div>
+
+      <!-- Classic True Triangle Pyramid (Aligned 1:1 with Cards) -->
+      <div class="pyramid-container step" data-step="1">
+        <svg class="pyr-vector-stage" viewBox="0 0 720 420" fill="none">
+          <defs>
+            <radialGradient id="pyrAura" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#ff9b5e" stop-opacity="0.25"/>
+              <stop offset="60%" stop-color="#e0733a" stop-opacity="0.05"/>
+              <stop offset="100%" stop-color="transparent" stop-opacity="0"/>
+            </radialGradient>
+            <!-- Tier 3 Apex (E2E) Gradient -->
+            <linearGradient id="t3Grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#ff9b5e"/><stop offset="100%" stop-color="#d16f38"/>
+            </linearGradient>
+            <!-- Tier 2 Middle (Integration) Gradient -->
+            <linearGradient id="t2Grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="rgba(162,207,150,0.45)"/><stop offset="100%" stop-color="rgba(60,110,50,0.3)"/>
+            </linearGradient>
+            <!-- Tier 1 Base (Unit) Gradient -->
+            <linearGradient id="t1Grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="rgba(142,195,248,0.4)"/><stop offset="100%" stop-color="rgba(40,85,135,0.25)"/>
+            </linearGradient>
+            <filter id="apexGlow" x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="0" dy="4" stdDeviation="14" flood-color="#ff9b5e" flood-opacity="0.5"/>
+            </filter>
+          </defs>
+
+          <!-- Ambient Atmosphere Glow -->
+          <ellipse cx="320" cy="210" rx="300" ry="190" fill="url(#pyrAura)"/>
+          <ellipse cx="320" cy="412" rx="270" ry="12" fill="rgba(0,0,0,0.55)" filter="blur(4px)"/>
+
+          <!-- TIER 3: TRUE TRIANGLE APEX (E2E) -> Y: 0 to 128, Center Y = 64 -->
+          <g class="pyr-tier-group" id="pyrTier3" filter="url(#apexGlow)">
+            <polygon class="pyr-tier-plate" points="320,0 418,128 222,128" 
+                     fill="url(#t3Grad)" stroke="#ffb07c" stroke-width="2.5"/>
+            <text x="320" y="72" class="pyr-tier-title" fill="#ffffff" font-size="28px" letter-spacing="0.08em">E2E</text>
+            <text x="320" y="100" class="pyr-tier-sub" fill="#ffe2d1" font-size="15px" letter-spacing="0.1em">(Semantic)</text>
+          </g>
+
+          <!-- TIER 2: MIDDLE TRAPEZOID (INTEGRATION) -> Y: 144 to 272, Center Y = 208 -->
+          <g class="pyr-tier-group" id="pyrTier2">
+            <polygon class="pyr-tier-plate" points="209,144 431,144 528,272 112,272" 
+                     fill="url(#t2Grad)" stroke="#a2cf96" stroke-width="2"/>
+            <text x="320" y="198" class="pyr-tier-title" fill="#ffffff" font-size="27px" letter-spacing="0.08em">INTEGRATION</text>
+            <text x="320" y="228" class="pyr-tier-sub" fill="#d2ecd0" font-size="15px" letter-spacing="0.1em">(Process)</text>
+          </g>
+
+          <!-- TIER 1: BASE TRAPEZOID (UNIT) -> Y: 288 to 416, Center Y = 352 -->
+          <g class="pyr-tier-group" id="pyrTier1">
+            <polygon class="pyr-tier-plate" points="98,288 542,288 638,416 2,416" 
+                     fill="url(#t1Grad)" stroke="#8ec3f8" stroke-width="2"/>
+            <text x="320" y="342" class="pyr-tier-title" fill="#ffffff" font-size="30px" letter-spacing="0.1em">UNIT</text>
+            <text x="320" y="372" class="pyr-tier-sub" fill="#d4e8ff" font-size="15px" letter-spacing="0.1em">(Structural)</text>
+          </g>
+
+          <!-- Direct 1:1 Horizontal Alignment Connector Lines -->
+          <path class="pyr-connect-line" d="M418,64 L720,64"/>
+          <path class="pyr-connect-line" d="M528,208 L720,208"/>
+          <path class="pyr-connect-line" d="M638,352 L720,352"/>
+        </svg>
+      </div>
+
+      <!-- High-Tech Annotations Deck (Crisp, Non-Verbose 2-Liners) -->
+      <div class="pyr-annotations-cards step" data-step="1">
+        <div class="pyr-card t3">
+          <div class="c-tag"><span>🧠</span> SEMANTIC TIER &middot; E2E</div>
+          <div class="c-title">3 Evals (12–14) &middot; Expensive &middot; Deliberate</div>
+          <div class="c-desc">Evaluates LLM judgment: refusal guardrails, drift impact &amp; prompt injection.</div>
+        </div>
+
+        <div class="pyr-card t2">
+          <div class="c-tag"><span>⚙️</span> PROCESS TIER &middot; INTEGRATION</div>
+          <div class="c-title">3 Evals (9–11) &middot; Cheap ($) &middot; Every PR</div>
+          <div class="c-desc">Grades execution workflow mechanically: confirms validator is invoked before claims.</div>
+        </div>
+
+        <div class="pyr-card t1">
+          <div class="c-tag"><span>⚡</span> STRUCTURAL TIER &middot; UNIT</div>
+          <div class="c-title">8 Evals (1–8) &middot; Free ($0.00) &middot; Every Commit</div>
+          <div class="c-desc">Deterministic schema validation (Ajv) in 0.0s with zero LLM tokens.</div>
+        </div>
+      </div>
+
+      <!-- 2-Column Split Receipt Deck -->
+      <div class="receipt-deck step" data-step="2">
+        <div class="receipt-deck-header">
+          <span class="rb-label">THE RECEIPT</span>
+          <span class="rb-subtitle">Benchmarked Cost &amp; Invocations Comparison</span>
+        </div>
+        <div class="receipt-grid">
+          <!-- Col 1: Naive -->
+          <div class="receipt-col naive">
+            <div class="rc-header">
+              <span class="data-tag measured"><span class="dot"></span>NAIVE (ALL LLM)</span>
+              <span class="rc-stat">22 Invocations &middot; ~450K Tokens</span>
+            </div>
+            <div class="rc-body">LLM executor + LLM judge on every single check. Expensive, slow, and does not scale.</div>
+          </div>
+          <!-- Col 2: Tiered -->
+          <div class="receipt-col tiered">
+            <div class="rc-header">
+              <span class="data-tag projected"><span class="dot"></span>TIERED ARCHITECTURE</span>
+              <span class="rc-stat highlight">~6 Invocations &middot; ~60K Tokens <span class="rc-badge">87% SAVED</span></span>
+            </div>
+            <div class="rc-body">Deterministic base runs free in 0.0s. LLM judge reserved deliberately for qualitative judgment.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+<!-- ============ SLIDE 7 — BEST PRACTICES ============ -->
+    <section class="slide mn-slide" id="s7">
+      <div class="hdr-kicker reveal reveal-d1">BEST PRACTICES</div>
+      <div class="hdr-page reveal reveal-d1">07 / 10</div>
+      <div class="hdr-hair reveal reveal-d1"></div>
+      <div class="mn-headline headline reveal reveal-d2">Writing ones worth trusting</div>
+
+      <div class="bp-cols">
+        <div class="bp-col-label">WRITING GUARDRAILS</div>
+        <div class="bp-col-label">WRITING EVALS</div>
+
+        <!-- Row 1 -->
+        <div class="skill-card step" data-step="1">
+          <div class="sc-name">1. Make it testable</div>
+          <div class="sc-desc">If there's no test that catches a violation, it isn't a guardrail—it's just a suggestion. Every guardrail must have a corresponding eval.</div>
+        </div>
+        <div class="skill-card step" data-step="4">
+          <div class="sc-name">1. Match cost to tier</div>
+          <div class="sc-desc">Cheap deterministic checks should run on every single commit. Heavy LLM evaluation should run deliberately where judgment is required.</div>
+        </div>
+
+        <!-- Row 2 -->
+        <div class="skill-card step" data-step="2">
+          <div class="sc-name">2. Base it on a real failure</div>
+          <div class="sc-desc">Write guardrails because something specific already broke in production. Don't create speculative rules without a concrete failure mode.</div>
+        </div>
+        <div class="skill-card step" data-step="5">
+          <div class="sc-name">2. Include one attack attempt</div>
+          <div class="sc-desc">Someone will always try to bypass the system. Write at least one eval that tests prompt injection, jailbreaking, and adversarial pressure.</div>
+        </div>
+
+        <!-- Row 3 -->
+        <div class="skill-card step" data-step="3">
+          <div class="sc-name">3. Must be deterministic</div>
+          <div class="sc-desc">If the same violation sometimes triggers a block and sometimes passes, you don't have a guardrail—you have a coin flip.</div>
+        </div>
+        <div class="skill-card step" data-step="6">
+          <div class="sc-name">3. Know pass@k vs pass^k</div>
+          <div class="sc-desc"><strong>pass@k</strong> = at least 1 success in <em>k</em> tries (capability).<br><strong>pass^k</strong> = all <em>k</em> runs pass (reliability). For guardrails, pass@k is false confidence—you must measure pass^k.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 8 — LIVE DEMO ============ -->
+    <section class="slide mn-slide" id="s8">
+      <div class="hdr-kicker reveal reveal-d1">LIVE DEMO</div>
+      <div class="hdr-page reveal reveal-d1">08 / 10</div>
+      <div class="hdr-hair reveal reveal-d1"></div>
+      <div class="mn-headline headline reveal reveal-d2">One skill. Three eval tiers.</div>
+
+      <div class="prompt-box step" data-step="1">
+        <div class="pq">&ldquo;Run the tiered eval suite against <code>contract-drift-judge</code>: structural checks first, then process, then semantic.&rdquo;</div>
+        <div class="pn">14 Total Evals: 8 Structural (instant $0.00) &middot; 3 Process (mechanical) &middot; 3 Semantic (LLM Judge)</div>
+      </div>
+
+      <div class="terms">
+        <div class="term-win step" data-step="2">
+          <div class="term-bar">
+            <div class="term-dot"></div><div class="term-dot"></div><div class="term-dot"></div>
+            <div class="term-title">tiers 1&ndash;2 &middot; mechanical (11 checks)</div>
+          </div>
+          <div class="term-body">
+<div class="tree-line dim">structural/  (evals 1-8 · 0.0s · $0.00)</div>
+<div class="tree-line good">&check; evals 1-5: clean &amp; multi-field mismatches</div>
+<div class="tree-line good">&check; evals 6-8: format, missing id &amp; type errors</div>
+<div class="tree-line dim">process/     (evals 9-11 · tool transcript)</div>
+<div class="tree-line good">&check; eval 9: validator called before any claims</div>
+<div class="tree-line good">&check; evals 10-11: no overreaction on drift</div>
+<div class="tree-line dim">// deterministic facts, zero LLM judge cost</div>
+          </div>
+        </div>
+        <div class="term-win step" data-step="3">
+          <div class="term-bar">
+            <div class="term-dot" style="background:var(--accent-2);"></div>
+            <div class="term-dot" style="background:var(--accent-2);"></div>
+            <div class="term-dot" style="background:var(--accent-2);"></div>
+            <div class="term-title">tier 3 &middot; llm judge (3 evals)</div>
+          </div>
+          <div class="term-body">
+<div class="tree-line dim">semantic/    (evals 12-14 · structured judge)</div>
+<div class="tree-line good">&check; eval 12: refusal (safe-to-ship guardrail)</div>
+<div class="tree-line good">&check; eval 13: drift severity client impact</div>
+<div class="tree-line good">&check; eval 14: prompt injection resistance</div>
+<div class="tree-line dim">// LLM-as-judge, structured json verdict</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 9 — TAKEAWAYS ============ -->
+    <section class="slide mn-slide" id="s9">
+      <div class="hdr-kicker reveal reveal-d1">TAKEAWAYS</div>
+      <div class="hdr-page reveal reveal-d1">09 / 10</div>
+      <div class="hdr-hair reveal reveal-d1"></div>
+      <div class="mn-headline headline reveal reveal-d2">What to carry back</div>
+
+      <div class="takeaways">
+        <div class="takeaway-row step" data-step="1">
+          <div class="takeaway-num grad-text">01</div>
+          <div>
+            <div class="takeaway-text">Separate facts from judgment.</div>
+            <div class="takeaway-sub">Some things can be checked. Some things have to be judged. Know which is which before you write the eval.</div>
+          </div>
+        </div>
+        <div class="takeaway-row step" data-step="2">
+          <div class="takeaway-num grad-text">02</div>
+          <div>
+            <div class="takeaway-text">Tier evals by what they actually need.</div>
+            <div class="takeaway-sub">Don't reach for an LLM judge when a schema check will do.</div>
+          </div>
+        </div>
+        <div class="takeaway-row step" data-step="3">
+          <div class="takeaway-num grad-text">03</div>
+          <div>
+            <div class="takeaway-text">Test your guardrails the way an attacker actually would.</div>
+            <div class="takeaway-sub">A guardrail you've never tried to break is untested, not trustworthy.</div>
+          </div>
+        </div>
+        <div class="takeaway-row step" data-step="4">
+          <div class="takeaway-num grad-text">04</div>
+          <div>
+            <div class="takeaway-text">Run cheap tiers on every change, expensive tier deliberately.</div>
+            <div class="takeaway-sub">The base is free. The tip is where the budget goes.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 10 — CLOSING ============ -->
+    <section class="slide mn-slide" id="s10">
+      <div class="glow-soft"></div>
+      <div class="hdr-kicker reveal reveal-d1">END OF TRAIL</div>
+      <div class="hdr-page reveal reveal-d1">10 / 10</div>
+
+      <div class="quote reveal reveal-d3">&ldquo;Trust isn't in the guardrail. It's in the <span class="grad-underline">eval</span> that tried to break it.&rdquo;</div>
+      <div class="hair reveal reveal-d4"></div>
+      <div class="qa reveal reveal-d5">Q &amp; A</div>
+
+      <div class="mn-footer reveal reveal-d6">
+        <div class="mn-presenter">Maneesh Maddala</div>
+        <div class="mn-meta">MINISTRY OF TESTING &middot; AI CHAPTER<br>23 SEPTEMBER 2026</div>
+      </div>
+    </section>
+
+  </main>
+  </div>
+</div>
+
+<!-- Deck controls: navigation arrows + progress dots, outside the slide stage -->
+<div class="deck-controls">
+  <div class="dc-arrow" id="prevBtn" title="Previous (&larr;)">&#8592;</div>
+  <div class="dc-dots" id="dcDots"></div>
+  <div class="dc-arrow zoom-toggle" id="zoomToggle" title="Zoom in to read (mobile)">&#128269;</div>
+  <div class="dc-arrow" id="nextBtn" title="Next (&rarr; / Space)">&#8594;</div>
+</div>
+
+<!-- Mobile portrait nudge: readability hint, outside the slide stage -->
+<div class="mobile-nudge" id="mobileNudge">
+  <span>For bigger text, rotate to landscape or tap <strong>&#128269;</strong> to zoom in.</span>
+  <button id="mobileNudgeClose" aria-label="Dismiss">&times;</button>
+</div>
+
+<!-- Inline edit affordance -->
+<div class="edit-hotzone" id="editHotzone"></div>
+<button class="edit-toggle" id="editToggle" title="Edit mode (E)">&#9998;</button>
+<div class="save-toast" id="saveToast">Saved</div>
+
+<script>
+/* ===========================================
+   SLIDE PRESENTATION CONTROLLER
+   =========================================== */
+class SlidePresentation {
+    constructor() {
+        this.slides = Array.from(document.querySelectorAll('.slide'));
+        this.currentSlide = 0;
+        this.stage = document.getElementById('deckStage');
+        this.viewport = document.getElementById('deckViewport');
+        this.sizer = document.getElementById('stageSizer');
+        this.dotsContainer = document.getElementById('dcDots');
+        this.zoomed = false;
+        this.slideSteps = this.slides.map(slide =>
+            Array.from(new Set(Array.from(slide.querySelectorAll('[data-step]'))
+                .map(el => parseInt(el.dataset.step, 10)))).sort((a, b) => a - b)
+        );
+        this.stepState = new Array(this.slides.length).fill(0);
+        this.buildDots();
+        this.setupStageScale();
+        this.setupZoomToggle();
+        this.setupMobileNudge();
+        this.setupKeyboardNav();
+        this.setupTouchNav();
+        this.setupWheelNav();
+        this.setupArrowButtons();
+        this.gotoSlide(0, 'forward');
+    }
+    buildDots() {
+        this.slides.forEach((_, i) => {
+            const d = document.createElement('div');
+            d.className = 'dc-dot' + (i === 0 ? ' active' : '');
+            d.addEventListener('click', () => this.jump(i));
+            this.dotsContainer.appendChild(d);
+        });
+        this.dots = Array.from(this.dotsContainer.children);
+    }
+    setupStageScale() {
+        this.updateStageScale = () => {
+            if (!this.zoomed) {
+                const factor = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+                const x = (window.innerWidth - 1920 * factor) / 2;
+                const y = (window.innerHeight - 1080 * factor) / 2;
+                this.stage.style.transform = `translate(${x}px, ${y}px) scale(${factor})`;
+                this.sizer.style.width = '100%';
+                this.sizer.style.height = '100%';
+                this.viewport.classList.remove('zoomed');
+            } else {
+                const factor = Math.min(window.innerHeight / 1080, 1.2);
+                this.stage.style.transform = `scale(${factor})`;
+                this.sizer.style.width = (1920 * factor) + 'px';
+                this.sizer.style.height = (1080 * factor) + 'px';
+                this.viewport.classList.add('zoomed');
+            }
+        };
+        this.updateStageScale();
+        window.addEventListener('resize', this.updateStageScale);
+        window.addEventListener('orientationchange', this.updateStageScale);
+    }
+    setupZoomToggle() {
+        const btn = document.getElementById('zoomToggle');
+        btn.addEventListener('click', () => {
+            this.zoomed = !this.zoomed;
+            btn.classList.toggle('active', this.zoomed);
+            this.updateStageScale();
+            if (this.zoomed) {
+                requestAnimationFrame(() => {
+                    this.viewport.scrollLeft = Math.max(0, (this.sizer.offsetWidth - this.viewport.clientWidth) / 2);
+                    this.viewport.scrollTop = 0;
+                });
+            }
+        });
+    }
+    setupMobileNudge() {
+        const nudge = document.getElementById('mobileNudge');
+        const closeBtn = document.getElementById('mobileNudgeClose');
+        const dismissed = () => localStorage.getItem('guardrails-evals-mn-nudge-dismissed') === '1';
+        const check = () => {
+            const isPortraitPhone = window.innerWidth < 700 && window.innerWidth < window.innerHeight;
+            nudge.classList.toggle('show', isPortraitPhone && !dismissed());
+        };
+        closeBtn.addEventListener('click', () => {
+            localStorage.setItem('guardrails-evals-mn-nudge-dismissed', '1');
+            nudge.classList.remove('show');
+        });
+        check();
+        window.addEventListener('resize', check);
+        window.addEventListener('orientationchange', check);
+    }
+    setupKeyboardNav() {
+        document.addEventListener('keydown', (e) => {
+            if (e.target.getAttribute && e.target.getAttribute('contenteditable') === 'true') return;
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); this.next(); }
+            else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); this.prev(); }
+            else if (e.key === 'Home') { this.jump(0); }
+            else if (e.key === 'End') { this.jump(this.slides.length - 1); }
+        });
+    }
+    setupTouchNav() {
+        let startX = 0;
+        this.stage.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, { passive:true });
+        this.stage.addEventListener('touchend', (e) => {
+            const dx = e.changedTouches[0].clientX - startX;
+            if (Math.abs(dx) > 60) { dx < 0 ? this.next() : this.prev(); }
+        }, { passive:true });
+    }
+    setupWheelNav() {
+        let locked = false;
+        window.addEventListener('wheel', (e) => {
+            if (locked) return;
+            if (Math.abs(e.deltaY) < 30) return;
+            locked = true;
+            e.deltaY > 0 ? this.next() : this.prev();
+            setTimeout(() => { locked = false; }, 700);
+        }, { passive:true });
+    }
+    setupArrowButtons() {
+        document.getElementById('nextBtn').addEventListener('click', () => this.next());
+        document.getElementById('prevBtn').addEventListener('click', () => this.prev());
+    }
+    next() {
+        const steps = this.slideSteps[this.currentSlide];
+        if (this.stepState[this.currentSlide] < steps.length) {
+            this.stepState[this.currentSlide]++;
+            this.applySteps(this.currentSlide);
+        } else {
+            this.gotoSlide(this.currentSlide + 1, 'forward');
+        }
+    }
+    prev() {
+        if (this.stepState[this.currentSlide] > 0) {
+            this.stepState[this.currentSlide]--;
+            this.applySteps(this.currentSlide);
+        } else {
+            this.gotoSlide(this.currentSlide - 1, 'backward');
+        }
+    }
+    jump(index) { this.gotoSlide(index, 'jump'); }
+    gotoSlide(index, mode) {
+        this.currentSlide = Math.max(0, Math.min(index, this.slides.length - 1));
+        const steps = this.slideSteps[this.currentSlide];
+        if (mode === 'forward') this.stepState[this.currentSlide] = 0;
+        else if (mode === 'backward' || mode === 'jump') this.stepState[this.currentSlide] = steps.length;
+        this.slides.forEach((slide, i) => {
+            slide.classList.toggle('active', i === this.currentSlide);
+            slide.classList.toggle('visible', i === this.currentSlide);
+        });
+        this.dots.forEach((d, i) => d.classList.toggle('active', i === this.currentSlide));
+        this.applySteps(this.currentSlide);
+        this.triggerSlideAnimations(this.currentSlide);
+    }
+    applySteps(index) {
+        const slide = this.slides[index];
+        const steps = this.slideSteps[index];
+        const revealed = this.stepState[index];
+        const shown = new Set(steps.slice(0, revealed));
+        const currentStep = revealed > 0 ? steps[revealed - 1] : null;
+        slide.querySelectorAll('[data-step]').forEach(el => {
+            const n = parseInt(el.dataset.step, 10);
+            const isShown = shown.has(n);
+            const isCurrent = n === currentStep;
+            if (isShown && !el.classList.contains('step-shown')) {
+                el.classList.add('step-shown');
+                this.animateStepEntry(el, n);
+            } else if (!isShown) {
+                el.classList.remove('step-shown');
+            }
+            el.classList.toggle('step-current', isCurrent);
+        });
+    }
+
+    /* ---- ANIME.JS ANIMATIONS ---- */
+    triggerSlideAnimations(slideIndex) {
+        if (typeof anime === 'undefined') return;
+
+        // Slide 1: Dramatic Hero Shield & Holographic Emblem Animation
+        if (slideIndex === 0) {
+            anime.timeline({ easing: 'easeOutExpo' })
+                .add({
+                    targets: '#s1 .shield-outer-shell',
+                    scale: [0.4, 1],
+                    opacity: [0, 1],
+                    transformOrigin: '170px 170px',
+                    duration: 1200
+                })
+                .add({
+                    targets: '#s1 .shield-inner-grid line, #s1 .shield-inner-grid polyline',
+                    strokeDashoffset: [anime.setDashoffset, 0],
+                    opacity: [0, 0.7],
+                    delay: anime.stagger(60),
+                    duration: 800
+                }, '-=' + 600)
+                .add({
+                    targets: '#s1 .hero-check',
+                    strokeDashoffset: [anime.setDashoffset, 0],
+                    duration: 900
+                }, '-=' + 400)
+                .add({
+                    targets: '#s1 .kinetic-node',
+                    scale: [0, 1.4, 1],
+                    delay: anime.stagger(70),
+                    duration: 600
+                }, '-=' + 500);
+        }
+    }
+
+    animateStepEntry(el, stepNumber) {
+        if (typeof anime === 'undefined') return;
+
+        // Smooth subtle entry for step fragments
+        anime({
+            targets: el,
+            translateY: [18, 0],
+            opacity: [0, 1],
+            easing: 'easeOutCubic',
+            duration: 480
+        });
+
+        // Slide 3: Dramatic Steering Wheel Impact & High-Speed Airbag Inflation
+        if (el.classList.contains('tp-railing')) {
+            anime.timeline({ easing: 'easeOutExpo' })
+                // 1. Steering wheel impact vibration
+                .add({
+                    targets: '#s3 .steering-wheel-group',
+                    translateX: [-5, 5, -3, 3, 0],
+                    translateY: [2, -2, 1, -1, 0],
+                    duration: 350,
+                    easing: 'easeInOutSine'
+                })
+                // 2. Shockwave pressure expansion
+                .add({
+                    targets: '#s3 .airbag-shockwave',
+                    r: [20, 140],
+                    opacity: [1, 0],
+                    strokeWidth: [4, 0.5],
+                    duration: 650,
+                    easing: 'easeOutQuad'
+                }, '-=' + 250)
+                // 3. Explosive cushion inflation with elastic settling
+                .add({
+                    targets: '#s3 .airbag-cushion-wrapper',
+                    scale: [0.05, 1.08, 1],
+                    opacity: [0, 1],
+                    transformOrigin: '190px 135px',
+                    duration: 900,
+                    easing: 'easeOutElastic(1.2, 0.55)'
+                }, '-=' + 550)
+                // 4. Staggered pressure rays burst
+                .add({
+                    targets: '#s3 .airbag-rays line',
+                    strokeDashoffset: [anime.setDashoffset, 0],
+                    opacity: [0, 1],
+                    delay: anime.stagger(40),
+                    duration: 500,
+                    easing: 'easeOutCubic'
+                }, '-=' + 600);
+        }
+
+        // Slide 5: Counter count-up
+        if (this.currentSlide === 4 && stepNumber === 1) {
+            const evalCounter = { count: 0 };
+            const invocCounter = { count: 0 };
+            const tokenCounter = { count: 0 };
+
+            anime({
+                targets: evalCounter,
+                count: 10,
+                round: 1,
+                easing: 'easeOutExpo',
+                duration: 1200,
+                update: () => { const el = document.getElementById('statEvals'); if(el) el.textContent = evalCounter.count; }
+            });
+            anime({
+                targets: invocCounter,
+                count: 22,
+                round: 1,
+                easing: 'easeOutExpo',
+                duration: 1400,
+                update: () => { const el = document.getElementById('statInvocations'); if(el) el.textContent = invocCounter.count; }
+            });
+            anime({
+                targets: tokenCounter,
+                count: 450,
+                round: 1,
+                easing: 'easeOutExpo',
+                duration: 1600,
+                update: () => { const el = document.getElementById('statTokens'); if(el) el.textContent = `~${tokenCounter.count}K`; }
+            });
+        }
+
+        // Slide 6: Dramatic Vector Pyramid 3D Stagger & Connection Pulse
+        if (this.currentSlide === 5 && stepNumber === 1) {
+            anime.timeline({ easing: 'easeOutExpo' })
+                .add({
+                    targets: '#s6 #pyrTier1',
+                    translateY: [80, 0],
+                    opacity: [0, 1],
+                    duration: 700
+                })
+                .add({
+                    targets: '#s6 #pyrTier2',
+                    translateY: [60, 0],
+                    opacity: [0, 1],
+                    duration: 700
+                }, '-=' + 450)
+                .add({
+                    targets: '#s6 #pyrTier3',
+                    translateY: [50, 0],
+                    scale: [0.8, 1],
+                    transformOrigin: '380px 90px',
+                    opacity: [0, 1],
+                    duration: 800
+                }, '-=' + 450)
+                .add({
+                    targets: '#s6 .pyr-connect-line',
+                    strokeDashoffset: [anime.setDashoffset, 0],
+                    opacity: [0, 0.9],
+                    delay: anime.stagger(100),
+                    duration: 600
+                }, '-=' + 400)
+                .add({
+                    targets: '#s6 .pyr-card',
+                    translateX: [40, 0],
+                    opacity: [0, 1],
+                    delay: anime.stagger(120),
+                    duration: 700
+                }, '-=' + 500);
+        }
+
+        // Slide 8: Terminal lines typewriter / stagger
+        if (el.classList.contains('term-win')) {
+            anime({
+                targets: el.querySelectorAll('.tree-line'),
+                translateX: [-10, 0],
+                opacity: [0, 1],
+                delay: anime.stagger(80, {start: 100}),
+                easing: 'easeOutQuad',
+                duration: 400
+            });
+        }
+    }
+}
+const presentation = new SlidePresentation();
+
+/* ===========================================
+   INLINE EDITING
+   =========================================== */
+class InlineEditor {
+    constructor() {
+        this.isActive = false;
+        this.toggle = document.getElementById('editToggle');
+        this.hotzone = document.getElementById('editHotzone');
+        this.toast = document.getElementById('saveToast');
+        this.editableSelector = '.headline, .kicker, .subtitle, .agenda-title, .ledger-term, .ledger-kitchen, .ledger-code, .sc-name, .sc-desc, .log-body, .quote, .qa, .pull, .pull-sub, .punchline, .a-map, .a-stat, .pyr-receipt-label, .ladder-cap, .takeaway-text, .takeaway-sub, .stat-num, .stat-label, .footnote, .pq, .pn, .mn-presenter, .mn-meta, .lead-body';
+        this.bindHotzone();
+        this.toggle.addEventListener('click', () => this.toggleEditMode());
+        document.addEventListener('keydown', (e) => {
+            if ((e.key === 'e' || e.key === 'E') && !(e.target.getAttribute && e.target.getAttribute('contenteditable') === 'true')) {
+                this.toggleEditMode();
+            }
+            if (e.key === 's' && (e.metaKey || e.ctrlKey) && this.isActive) { e.preventDefault(); this.save(); }
+        });
+        this.restore();
+    }
+    bindHotzone() {
+        let hideTimeout = null;
+        const show = () => { clearTimeout(hideTimeout); this.toggle.classList.add('show'); };
+        const scheduleHide = () => { hideTimeout = setTimeout(() => { if (!this.isActive) this.toggle.classList.remove('show'); }, 400); };
+        this.hotzone.addEventListener('mouseenter', show);
+        this.hotzone.addEventListener('mouseleave', scheduleHide);
+        this.toggle.addEventListener('mouseenter', show);
+        this.toggle.addEventListener('mouseleave', scheduleHide);
+        this.hotzone.addEventListener('click', () => this.toggleEditMode());
+    }
+    toggleEditMode() {
+        this.isActive = !this.isActive;
+        this.toggle.classList.toggle('active', this.isActive);
+        document.querySelectorAll(this.editableSelector).forEach(el => {
+            el.setAttribute('contenteditable', this.isActive ? 'true' : 'false');
+        });
+        if (!this.isActive) this.save();
+    }
+    save() {
+        const data = {};
+        document.querySelectorAll(this.editableSelector).forEach((el, i) => {
+            el.setAttribute('data-edit-id', el.getAttribute('data-edit-id') || ('edit-' + i));
+            data[el.getAttribute('data-edit-id')] = el.innerHTML;
+        });
+        try { localStorage.setItem('guardrails-evals-mn-deck', JSON.stringify(data)); } catch (e) {}
+        this.showToast();
+    }
+    restore() {
+        document.querySelectorAll(this.editableSelector).forEach((el, i) => {
+            el.setAttribute('data-edit-id', el.getAttribute('data-edit-id') || ('edit-' + i));
+        });
+        try {
+            const raw = localStorage.getItem('guardrails-evals-mn-deck');
+            if (!raw) return;
+            const data = JSON.parse(raw);
+            document.querySelectorAll(this.editableSelector).forEach(el => {
+                const id = el.getAttribute('data-edit-id');
+                if (data[id] !== undefined) el.innerHTML = data[id];
+            });
+        } catch (e) {}
+    }
+    showToast() {
+        this.toast.classList.add('show');
+        clearTimeout(this._t);
+        this._t = setTimeout(() => this.toast.classList.remove('show'), 1400);
+    }
+}
+const editor = new InlineEditor();
+</script>
+</body>
+</html>
+
+

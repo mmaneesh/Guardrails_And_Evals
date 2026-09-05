@@ -40,6 +40,9 @@ const GRADE_SCHEMA = {
   additionalProperties: false,
 } as const;
 
+/**
+ * Formats transcript entries, final output, and expectations into a user prompt for the judge.
+ */
 function buildUserMessage(executorResult: ExecutorResult, expectations: string[]): string {
   const transcriptLines = executorResult.transcript.map((entry) => {
     if (entry.type === "text") return `[text] ${entry.text}`;
@@ -65,6 +68,9 @@ function buildUserMessage(executorResult: ExecutorResult, expectations: string[]
   ].join("\n");
 }
 
+/**
+ * Calls the LLM judge using structured JSON outputs to grade the transcript against expectations.
+ */
 export async function runJudge(
   evalId: number,
   executorResult: ExecutorResult,
@@ -79,10 +85,6 @@ export async function runJudge(
       model: JUDGE_MODEL,
       max_tokens: 4096,
       system: JUDGE_SYSTEM_PROMPT,
-      // Grading a fixed transcript against a fixed expectation list is
-      // mechanical, not exploratory — low effort and no thinking keeps the
-      // cheap tier cheap. Sonnet 5 (unlike Opus 5) accepts disabled thinking
-      // at any effort level.
       output_config: { effort: "low", format: { type: "json_schema", schema: GRADE_SCHEMA } },
       thinking: { type: "disabled" },
       messages: [{ role: "user", content: buildUserMessage(executorResult, expectations) }],
@@ -103,10 +105,29 @@ export async function runJudge(
   let grades: JudgeGrade[];
   try {
     const parsed = JSON.parse(textBlock.text) as { grades: JudgeGrade[] };
+    if (!parsed || !Array.isArray(parsed.grades)) {
+      throw new Error("missing grades array");
+    }
+    if (parsed.grades.length !== expectations.length) {
+      throw new Error(
+        `expected ${expectations.length} grades but received ${parsed.grades.length}`
+      );
+    }
+    for (const [index, grade] of parsed.grades.entries()) {
+      if (
+        !grade ||
+        typeof grade.text !== "string" ||
+        grade.text !== expectations[index] ||
+        typeof grade.passed !== "boolean" ||
+        typeof grade.evidence !== "string"
+      ) {
+        throw new Error(`invalid grade at index ${index}`);
+      }
+    }
     grades = parsed.grades;
   } catch (err) {
     throw new Error(
-      `Judge response for eval ${evalId} was not valid JSON despite output_config.format: ${describeError(err)}`
+      `Judge response for eval ${evalId} failed validation despite output_config.format: ${describeError(err)}`
     );
   }
 

@@ -53,6 +53,9 @@ check(
 
 // ==================== process tier ====================
 
+/**
+ * Creates synthetic executor results for testing mechanical transcript rules.
+ */
 function fakeResult(transcript: ExecutorResult["transcript"], finalText: string): ExecutorResult {
   return {
     evalId: 999,
@@ -146,6 +149,31 @@ const statusNeverMentioned = fakeResult([], "total_amount is a critical type err
 check(
   "process: status never mentioned at all — fails",
   checkProcessRules(statusNeverMentioned, severityRules),
+  false
+);
+
+// Rule: final_text_field_not_severity for shipping_carrier
+const carrierRules: ProcessRule[] = [
+  { type: "final_text_field_not_severity", field: "shipping_carrier", severity: "critical" },
+];
+
+const carrierNonBreaking = fakeResult(
+  [],
+  "field: shipping_carrier — this is an additive field and not a breaking change."
+);
+check(
+  "process: shipping_carrier noted without critical severity — passes",
+  checkProcessRules(carrierNonBreaking, carrierRules),
+  true
+);
+
+const carrierCritical = fakeResult(
+  [],
+  "field: shipping_carrier — severity: critical violation because it was not in the spec."
+);
+check(
+  "process: shipping_carrier marked critical — fails",
+  checkProcessRules(carrierCritical, carrierRules),
   false
 );
 

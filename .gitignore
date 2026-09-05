@@ -4,3 +4,5 @@ runs/
 .env
 .DS_Store
 .superpowers/
+docs
+.claude
