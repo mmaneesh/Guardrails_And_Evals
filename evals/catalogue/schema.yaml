@@ -1,0 +1,15 @@
+openapi: 3.0.3
+info: { title: Catalogue API, version: 1.0.0 }
+components:
+  schemas:
+    CatalogueItem:
+      type: object
+      required: [sku, name, price, availability]
+      properties:
+        sku: { type: string }
+        name: { type: string }
+        price: { type: number }
+        availability: { type: string, enum: [in_stock, backorder, discontinued] }
+        tags:
+          type: array
+          items: { type: string }

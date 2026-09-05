@@ -21,8 +21,8 @@ const cleanEval: StructuralEvalDef = {
   tier: "structural",
   prompt: "test",
   expected_output: "test",
-  specPath: "evals/files/order_schema.yaml",
-  responsePath: "evals/files/order_response_clean.json",
+  specPath: "evals/orders/schema.yaml",
+  responsePath: "evals/orders/response_01.json",
   expected_counts: { structuralViolations: 0, enumMismatches: 0, undocumentedFields: 0 },
 };
 
@@ -31,8 +31,8 @@ const enumOnlyEval: StructuralEvalDef = {
   tier: "structural",
   prompt: "test",
   expected_output: "test",
-  specPath: "evals/files/order_schema.yaml",
-  responsePath: "evals/files/order_response_enum_only.json",
+  specPath: "evals/orders/schema.yaml",
+  responsePath: "evals/orders/response_03.json",
   expected_counts: { structuralViolations: 0, enumMismatches: 1, undocumentedFields: 0 },
   expected_fields: { enumMismatches: ["status"] },
 };

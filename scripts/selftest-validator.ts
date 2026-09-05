@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { validate } from "./validate-schema.js";
 
-const SPEC = "evals/files/order_schema.yaml";
+const SPEC = "evals/orders/schema.yaml";
 
 type Expectation = {
   label: string;
@@ -15,63 +15,63 @@ type Expectation = {
 const expectations: Expectation[] = [
   {
     label: "broken fixture (order_response.json)",
-    response: "evals/files/order_response.json",
+    response: "evals/orders/response_02.json",
     structural: 2,
     enumMismatches: 1,
     undocumented: 1,
   },
   {
     label: "clean fixture (order_response_clean.json)",
-    response: "evals/files/order_response_clean.json",
+    response: "evals/orders/response_01.json",
     structural: 0,
     enumMismatches: 0,
     undocumented: 0,
   },
   {
     label: "injection fixture (order_response_injection.json)",
-    response: "evals/files/order_response_injection.json",
+    response: "evals/orders/response_09.json",
     structural: 0,
     enumMismatches: 0,
     undocumented: 1,
   },
   {
     label: "enum-only fixture (order_response_enum_only.json)",
-    response: "evals/files/order_response_enum_only.json",
+    response: "evals/orders/response_03.json",
     structural: 0,
     enumMismatches: 1,
     undocumented: 0,
   },
   {
     label: "undocumented-only fixture (order_response_undocumented_only.json)",
-    response: "evals/files/order_response_undocumented_only.json",
+    response: "evals/orders/response_04.json",
     structural: 0,
     enumMismatches: 0,
     undocumented: 1,
   },
   {
     label: "optional-absent fixture (order_response_optional_absent.json)",
-    response: "evals/files/order_response_optional_absent.json",
+    response: "evals/orders/response_05.json",
     structural: 0,
     enumMismatches: 0,
     undocumented: 0,
   },
   {
     label: "invalid-format fixture (order_response_invalid_format.json)",
-    response: "evals/files/order_response_invalid_format.json",
+    response: "evals/orders/response_06.json",
     structural: 2,
     enumMismatches: 0,
     undocumented: 0,
   },
   {
     label: "missing-id fixture (order_response_missing_id.json)",
-    response: "evals/files/order_response_missing_id.json",
+    response: "evals/orders/response_07.json",
     structural: 1,
     enumMismatches: 0,
     undocumented: 0,
   },
   {
     label: "type-mismatch fixture (order_response_type_mismatch.json)",
-    response: "evals/files/order_response_type_mismatch.json",
+    response: "evals/orders/response_08.json",
     structural: 1,
     enumMismatches: 0,
     undocumented: 0,

@@ -125,7 +125,7 @@ cp .env.example .env   # then fill in ANTHROPIC_API_KEY
 ## Running the validator standalone
 
 ```bash
-npm run validate -- evals/files/order_schema.yaml evals/files/order_response.json
+npm run validate -- evals/orders/schema.yaml evals/orders/response_02.json
 ```
 
 Prints the three-bucket JSON output (`structuralViolations`,
@@ -200,7 +200,7 @@ production secrets or unredacted personal data in fixture payloads.
   including real failure.
 - **The executor's tools are narrow on purpose.** It gets exactly
   `read_file` (restricted to `SKILL.md`, `references/`, and
-  `evals/files/`) and `run_validator` (calls the validator's exported
+  `evals/`) and `run_validator` (calls the validator's exported
   function directly, no subprocess) — not a general shell. This is the same
   guardrails idea the talk is about, applied to the demo's own tooling.
 - **The system prompt is cached.** `SKILL.md` + the judgment reference doc

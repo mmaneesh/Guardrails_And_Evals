@@ -14,7 +14,7 @@ import {
 } from "./config.js";
 
 const REPO_ROOT = process.cwd();
-const ALLOWED_READ_PREFIXES = ["SKILL.md", "references/", "evals/files/"];
+const ALLOWED_READ_PREFIXES = ["SKILL.md", "references/", "evals/"];
 
 /**
  * Ensures requested file paths do not escape the sandbox boundary.
@@ -29,7 +29,7 @@ function resolveSafePath(requestedPath: string): string {
   }
   const allowed = ALLOWED_READ_PREFIXES.some((prefix) => rel === prefix || rel.startsWith(prefix));
   if (!allowed) {
-    throw new Error(`Path not permitted (must be SKILL.md, references/, or evals/files/): ${requestedPath}`);
+    throw new Error(`Path not permitted (must be SKILL.md, references/, or evals/): ${requestedPath}`);
   }
   return canonicalPath;
 }
@@ -51,7 +51,7 @@ const TOOLS: Anthropic.Tool[] = [
   {
     name: "read_file",
     description:
-      "Read a file from this repository. Only SKILL.md, files under references/, and files under evals/files/ can be read.",
+      "Read a file from this repository. Only SKILL.md, files under references/, and files under evals/ can be read.",
     input_schema: {
       type: "object",
       properties: {
