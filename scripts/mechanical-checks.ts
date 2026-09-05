@@ -17,9 +17,9 @@ export function runStructuralCheck(evalDef: StructuralEvalDef): JudgeGrade[] {
   let result;
   try { result = validate(evalDef.specPath, evalDef.responsePath, evalDef.schemaName); } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return evalDef.expected_error ? [{ text: `validator rejects unsupported input: `, passed: message.includes(evalDef.expected_error), evidence: message }] : [{ text: "validator completed", passed: false, evidence: message }];
+    return evalDef.expected_error ? [{ text: `validator rejects unsupported input: ${evalDef.expected_error}`, passed: message.includes(evalDef.expected_error), evidence: message }] : [{ text: "validator completed", passed: false, evidence: message }];
   }
-  if (evalDef.expected_error) return [{ text: `validator rejects unsupported input: `, passed: false, evidence: "validator returned a result" }];
+  if (evalDef.expected_error) return [{ text: `validator rejects unsupported input: ${evalDef.expected_error}`, passed: false, evidence: "validator returned a result" }];
   const grades: JudgeGrade[] = [];
 
   const buckets: {

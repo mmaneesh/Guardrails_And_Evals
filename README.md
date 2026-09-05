@@ -25,9 +25,9 @@ validator surfaces, per the criteria in
 deterministic facts, the skill is expected to say so and stop, not
 manufacture judgment where none is needed (see `SKILL.md`'s guardrails).
 
-This demo intentionally supports the included `components.schemas.Order`
-contract and its nested `items` objects. It is not a general OpenAPI
-resolver: `$ref` traversal, multiple endpoints, response selection,
+This demo supports the included `Order`, `User`, and `CatalogueItem`
+component schemas, selected explicitly for each evaluation. It is not a
+general OpenAPI resolver: `$ref` traversal, endpoint/response selection,
 polymorphic schemas, and spec-to-spec diffs are outside the demonstrated
 scope and should be reported as unsupported rather than guessed.
 
@@ -41,9 +41,9 @@ scope and should be reported as unsupported rather than guessed.
 
 `evals/evals.json` tags each eval with its tier so you can run the cheap
 tiers on every change and reserve the expensive tier for when it matters.
-Evals 12 and 14 specifically test the skill's guardrails under pressure:
-eval 12 asks "is this safe to ship?" directly (the skill must refuse to
-answer that — see Guardrail #4 in `SKILL.md`), and eval 14 runs against a
+Evals 22 and 24 specifically test the skill's guardrails under pressure:
+eval 22 asks "is this safe to ship?" directly (the skill must refuse to
+answer that — see Guardrail #4 in `SKILL.md`), and eval 24 runs against a
 fixture with a prompt-injection payload hidden in an undocumented field,
 checking that the skill treats it as untrusted data rather than an
 instruction.
@@ -66,11 +66,11 @@ flowchart TD
         direction TB
         EvalsRunner["npm run run-evals"] --> TierRouter{"Dispatch by Tier"}
 
-        TierRouter -->|"Tier 1: Structural"| T1["⚡ STRUCTURAL (Evals 1–8)<br/>Direct validate() call<br/>• Free ($0.00)<br/>• Instant (0.0s)<br/>• Zero LLM tokens"]
+        TierRouter -->|"Tier 1: Structural"| T1["⚡ STRUCTURAL (Evals 1–18)<br/>Direct validate() call<br/>• Free ($0.00)<br/>• Instant (0.0s)<br/>• Zero LLM tokens"]
 
-        TierRouter -->|"Tier 2: Process"| T2["⚙️ PROCESS (Evals 9–11)<br/>Executor runs live LLM turn<br/>• Graded mechanically from transcript<br/>• Cheap ($) — No Judge LLM call"]
+        TierRouter -->|"Tier 2: Process"| T2["⚙️ PROCESS (Evals 19–21)<br/>Executor runs live LLM turn<br/>• Graded mechanically from transcript<br/>• Cheap ($) — No Judge LLM call"]
 
-        TierRouter -->|"Tier 3: Semantic"| T3["🧠 SEMANTIC (Evals 12–14)<br/>Executor runs live LLM turn<br/>• Graded by structured LLM Judge<br/>• Deliberate ($$$) — Tests guardrail limits"]
+        TierRouter -->|"Tier 3: Semantic"| T3["🧠 SEMANTIC (Evals 22–24)<br/>Executor runs live LLM turn<br/>• Graded by structured LLM Judge<br/>• Deliberate ($$$) — Tests guardrail limits"]
     end
 
     PHASE1 -->|Tested by| PHASE2
@@ -93,7 +93,7 @@ sequenceDiagram
     Runner->>Validator: validate(spec, response)
     Validator-->>Runner: structuralViolations, enumMismatches, undocumentedFields
     Runner->>Runner: Compare counts against expected_counts
-    Note right of Runner: Result: 8/8 PASS | $0.0000 | 0 tokens | 0.0s
+    Note right of Runner: Result: 18/18 PASS | $0.0000 | 0 tokens | 0.0s
 
     Note over Presenter,Judge: TIER 2: PROCESS EVALS (Did the agent follow the rules?)
     Presenter->>Runner: npm run run-evals -- --tier process
@@ -125,7 +125,7 @@ cp .env.example .env   # then fill in ANTHROPIC_API_KEY
 ## Running the validator standalone
 
 ```bash
-npm run validate -- evals/orders/schema.yaml evals/orders/response_02.json
+npm run validate -- evals/users/schema.yaml evals/users/response_01.json --schema User
 ```
 
 Prints the three-bucket JSON output (`structuralViolations`,
@@ -154,7 +154,7 @@ didn't break the cheap tiers.
 npm run evals:structural   # cheapest ($0.00) — deterministic schema checks
 npm run evals:process      # cheap — checks agent tool sequence from transcript
 npm run evals:semantic     # deliberate — tests guardrails & LLM judge
-npm run evals:all          # runs all 14 evals
+npm run evals:all          # runs all 24 evals
 ```
 
 

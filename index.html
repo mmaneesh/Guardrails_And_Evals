@@ -658,19 +658,19 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
       <div class="pyr-annotations-cards step" data-step="1">
         <div class="pyr-card t3">
           <div class="c-tag"><span>🧠</span> SEMANTIC TIER &middot; E2E</div>
-          <div class="c-title">3 Evals (12–14) &middot; Expensive &middot; Deliberate</div>
+          <div class="c-title">3 Evals (22–24) &middot; Expensive &middot; Deliberate</div>
           <div class="c-desc">Evaluates LLM judgment: refusal guardrails, drift impact &amp; prompt injection.</div>
         </div>
 
         <div class="pyr-card t2">
           <div class="c-tag"><span>⚙️</span> PROCESS TIER &middot; INTEGRATION</div>
-          <div class="c-title">3 Evals (9–11) &middot; Cheap ($) &middot; Every PR</div>
+          <div class="c-title">3 Evals (19–21) &middot; Cheap ($) &middot; Every PR</div>
           <div class="c-desc">Grades execution workflow mechanically: confirms validator is invoked before claims.</div>
         </div>
 
         <div class="pyr-card t1">
           <div class="c-tag"><span>⚡</span> STRUCTURAL TIER &middot; UNIT</div>
-          <div class="c-title">8 Evals (1–8) &middot; Free ($0.00) &middot; Every Commit</div>
+          <div class="c-title">18 Evals (1–18) &middot; Free ($0.00) &middot; Every Commit</div>
           <div class="c-desc">Deterministic schema validation (Ajv) in 0.0s with zero LLM tokens.</div>
         </div>
       </div>
@@ -754,22 +754,22 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
 
       <div class="prompt-box step" data-step="1">
         <div class="pq">&ldquo;Run the tiered eval suite against <code>contract-drift-judge</code>: structural checks first, then process, then semantic.&rdquo;</div>
-        <div class="pn">14 Total Evals: 8 Structural (instant $0.00) &middot; 3 Process (mechanical) &middot; 3 Semantic (LLM Judge)</div>
+        <div class="pn">24 Total Evals: 18 Structural (instant $0.00) &middot; 3 Process (mechanical) &middot; 3 Semantic (LLM Judge)</div>
       </div>
 
       <div class="terms">
         <div class="term-win step" data-step="2">
           <div class="term-bar">
             <div class="term-dot"></div><div class="term-dot"></div><div class="term-dot"></div>
-            <div class="term-title">tiers 1&ndash;2 &middot; mechanical (11 checks)</div>
+            <div class="term-title">tiers 1&ndash;2 &middot; mechanical (21 checks)</div>
           </div>
           <div class="term-body">
-<div class="tree-line dim">structural/  (evals 1-8 · 0.0s · $0.00)</div>
-<div class="tree-line good">&check; evals 1-5: clean &amp; multi-field mismatches</div>
-<div class="tree-line good">&check; evals 6-8: format, missing id &amp; type errors</div>
-<div class="tree-line dim">process/     (evals 9-11 · tool transcript)</div>
-<div class="tree-line good">&check; eval 9: validator called before any claims</div>
-<div class="tree-line good">&check; evals 10-11: no overreaction on drift</div>
+<div class="tree-line dim">structural/  (evals 1-18 · 0.0s · $0.00)</div>
+<div class="tree-line good">&check; evals 1-16: Order, User &amp; CatalogueItem fixtures</div>
+<div class="tree-line good">&check; evals 17-18: unsupported schema &amp; malformed JSON</div>
+<div class="tree-line dim">process/     (evals 19-21 · tool transcript)</div>
+<div class="tree-line good">&check; eval 19: validator called before any claims</div>
+<div class="tree-line good">&check; evals 20-21: no overreaction on drift</div>
 <div class="tree-line dim">// deterministic facts, zero LLM judge cost</div>
           </div>
         </div>
@@ -781,10 +781,10 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
             <div class="term-title">tier 3 &middot; llm judge (3 evals)</div>
           </div>
           <div class="term-body">
-<div class="tree-line dim">semantic/    (evals 12-14 · structured judge)</div>
-<div class="tree-line good">&check; eval 12: refusal (safe-to-ship guardrail)</div>
-<div class="tree-line good">&check; eval 13: drift severity client impact</div>
-<div class="tree-line good">&check; eval 14: prompt injection resistance</div>
+<div class="tree-line dim">semantic/    (evals 22-24 · structured judge)</div>
+<div class="tree-line good">&check; eval 22: refusal (safe-to-ship guardrail)</div>
+<div class="tree-line good">&check; eval 23: drift severity client impact</div>
+<div class="tree-line good">&check; eval 24: prompt injection resistance</div>
 <div class="tree-line dim">// LLM-as-judge, structured json verdict</div>
           </div>
         </div>
@@ -1284,5 +1284,4 @@ const editor = new InlineEditor();
 </script>
 </body>
 </html>
-
 
