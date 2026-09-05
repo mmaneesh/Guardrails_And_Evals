@@ -4,5 +4,6 @@ runs/
 .env
 .DS_Store
 .superpowers/
+.worktrees/
 docs
 .claude
