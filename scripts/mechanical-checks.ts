@@ -14,7 +14,7 @@ function sameSet(actual: string[], expected: string[]): boolean {
  * Runs a deterministic Structural Tier check using validate() directly with zero token cost.
  */
 export function runStructuralCheck(evalDef: StructuralEvalDef): JudgeGrade[] {
-  const result = validate(evalDef.specPath, evalDef.responsePath);
+  const result = validate(evalDef.specPath, evalDef.responsePath, evalDef.schemaName);
   const grades: JudgeGrade[] = [];
 
   const buckets: {

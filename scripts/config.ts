@@ -185,6 +185,7 @@ export type StructuralEvalDef = EvalBase & {
   tier: "structural";
   specPath: string;
   responsePath: string;
+  schemaName?: string;
   expected_counts: {
     structuralViolations: number;
     enumMismatches: number;

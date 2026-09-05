@@ -1,0 +1,12 @@
+openapi: 3.0.3
+info: { title: Users API, version: 1.0.0 }
+components:
+  schemas:
+    User:
+      type: object
+      required: [id, email, role]
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        role: { type: string, enum: [admin, member] }
+        display_name: { type: string }
