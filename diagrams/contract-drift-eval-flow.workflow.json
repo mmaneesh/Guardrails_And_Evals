@@ -1,0 +1,62 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Contract Drift Skill: Eval Execution Flow",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "inputs", "label": "Test Inputs" },
+    { "id": "runtime", "label": "Eval Runtime" },
+    { "id": "agent", "label": "Skill Execution" },
+    { "id": "evidence", "label": "Evidence and Grading" }
+  ],
+  "phases": [
+    { "id": "prepare", "label": "Prepare", "fromCol": 0, "toCol": 1 },
+    { "id": "route", "label": "Route by tier", "fromCol": 2, "toCol": 2, "variant": "emphasis" },
+    { "id": "execute", "label": "Execute and grade", "fromCol": 3, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": ["fixtures", "runner", "tier-router", "executor", "judge", "report"],
+  "nodes": [
+    { "id": "fixtures", "lane": "inputs", "col": 0, "type": "external", "label": "Eval fixture", "sublabel": "schema + captured response", "width": 150 },
+    { "id": "runner", "lane": "runtime", "col": 1, "type": "backend", "label": "Eval runner", "sublabel": "reads eval definition", "width": 150 },
+    { "id": "tier-router", "lane": "runtime", "col": 2, "type": "messagebus", "label": "Tier router", "sublabel": "structural / process / semantic", "width": 160 },
+    { "id": "executor", "lane": "agent", "col": 3, "type": "backend", "label": "Skill executor", "sublabel": "runs the contract-drift skill", "width": 160 },
+    { "id": "validator", "lane": "evidence", "col": 3, "type": "backend", "label": "Deterministic validator", "sublabel": "facts: schema vs response", "width": 170 },
+    { "id": "mechanical", "lane": "evidence", "col": 4, "type": "backend", "label": "Mechanical checker", "sublabel": "grades tool-call sequence", "width": 165 },
+    { "id": "judge", "lane": "agent", "col": 4, "type": "backend", "label": "Semantic judge", "sublabel": "grades judgment and guardrails", "width": 165 },
+    { "id": "structural-grade", "lane": "evidence", "col": 1, "type": "database", "label": "Structural grade", "sublabel": "compares expected facts", "width": 150 },
+    { "id": "report", "lane": "runtime", "col": 5, "type": "database", "label": "Eval result", "sublabel": "grade + evidence artifact", "width": 150 }
+  ],
+  "edges": [
+    { "id": "fixture-runner", "from": "fixtures", "to": "runner", "label": "load", "variant": "default" },
+    { "id": "runner-route", "from": "runner", "to": "tier-router", "label": "select tier", "variant": "emphasis" },
+    { "id": "structural-validate", "from": "tier-router", "to": "validator", "label": "structural", "variant": "default" },
+    { "id": "structural-grade", "from": "validator", "to": "structural-grade", "label": "compare expected facts", "variant": "default" },
+    { "id": "structural-result", "from": "structural-grade", "to": "report", "label": "write grade", "variant": "default" },
+    { "id": "execute-skill", "from": "tier-router", "to": "executor", "label": "process or semantic", "variant": "emphasis" },
+    { "id": "executor-validator", "from": "executor", "to": "validator", "label": "run_validator", "variant": "default" },
+    { "id": "process-grade", "from": "executor", "to": "mechanical", "label": "transcript", "variant": "default" },
+    { "id": "mechanical-result", "from": "mechanical", "to": "report", "label": "process grade", "variant": "default" },
+    { "id": "semantic-grade", "from": "executor", "to": "judge", "label": "response + expectations", "variant": "emphasis" },
+    { "id": "judge-result", "from": "judge", "to": "report", "label": "semantic grade", "variant": "emphasis" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Cheap first",
+      "items": [
+        "Structural evals call the validator directly",
+        "Process evals grade the executor transcript mechanically"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Judgment last",
+      "items": [
+        "Only semantic evals invoke the LLM judge",
+        "All tiers write evidence with the result"
+      ]
+    }
+  ]
+}
