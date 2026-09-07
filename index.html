@@ -242,13 +242,14 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
 .agenda-row.step-current .agenda-title { color:var(--ink); }
 .agenda-row.step-current .agenda-num { color:var(--accent); }
 
-/* ---- SLIDE 3: THE ANALOGY ---- */
+/* ---- SLIDE 3: THE EXAMPLE ---- */
 #s3 .headline { position:absolute; top:172px; left:146px; width:960px; font-size:60px; line-height:1.14; }
 #s3 .lead-body { position:absolute; top:370px; left:150px; width:800px; font-size:24px; }
 #s3 .pull { position:absolute; top:570px; left:150px; width:800px; font-size:40px; font-family:var(--font-display); font-weight:700; line-height:1.2; }
 #s3 .pull-sub { position:absolute; top:720px; left:150px; width:800px; font-size:20px; color:var(--ink-soft); font-family:var(--font-mono); line-height:1.5; }
-#s3 .tp-railing { width:480px; height:480px; left:1235px; top:300px; }
-#s3 .tp-railing svg { height:390px; }
+#s3 .example-panel { position:absolute; top:285px; right:150px; width:540px; min-height:505px; border:1px solid var(--line); border-radius:10px; background:var(--panel-bg); padding:30px 34px; }
+#s3 .example-panel pre { margin-top:20px; font-family:var(--font-mono); font-size:17px; line-height:1.65; color:var(--ink-soft); white-space:pre-wrap; }
+#s3 .example-panel .bad { color:var(--accent); }
 
 /* ---- SLIDE 4: VOCABULARY ---- */
 #s4 .headline { position:absolute; top:172px; left:146px; font-size:56px; }
@@ -446,7 +447,7 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
       <div class="mn-headline headline reveal reveal-d2">What We'll Cover</div>
 
       <div class="agenda-list">
-        <div class="agenda-row step" data-step="1"><div class="agenda-num">01</div><div class="agenda-title">The Analogy</div></div>
+        <div class="agenda-row step" data-step="1"><div class="agenda-num">01</div><div class="agenda-title">The Failure</div></div>
         <div class="agenda-row step" data-step="2"><div class="agenda-num">02</div><div class="agenda-title">The Vocabulary</div></div>
         <div class="agenda-row step" data-step="3"><div class="agenda-num">03</div><div class="agenda-title">Our Story</div></div>
         <div class="agenda-row step" data-step="4"><div class="agenda-num">04</div><div class="agenda-title">The Pyramid</div></div>
@@ -455,70 +456,27 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
       </div>
     </section>
 
-    <!-- ============ SLIDE 3 — THE ANALOGY ============ -->
+    <!-- ============ SLIDE 3 — THE EXAMPLE ============ -->
     <section class="slide mn-slide" id="s3">
-      <div class="hdr-kicker reveal reveal-d1">THE ANALOGY</div>
+      <div class="hdr-kicker reveal reveal-d1">THE FAILURE</div>
       <div class="hdr-page reveal reveal-d1">03 / 10</div>
       <div class="hdr-hair reveal reveal-d1"></div>
-      <div class="mn-headline headline reveal reveal-d2">There's an airbag<br>behind every wheel.</div>
+      <div class="mn-headline headline reveal reveal-d2">A real response.<br>Four findings.</div>
 
-      <div class="mn-body lead-body step" data-step="1">It doesn't care how the crash happened: black ice, a distracted turn, a deer in the road. It just has to deploy.</div>
+      <div class="mn-body lead-body step" data-step="1">Before we discuss guardrails or evals, start with the thing we need to inspect: a captured API response that no longer matches its contract.</div>
 
-      <div class="trail-panel tp-railing step" data-step="2">
-        <div class="tp-label">HARD SAFETY CONSTRAINT</div>
-        <svg viewBox="0 0 380 320" class="airbag-svg">
-          <defs>
-            <radialGradient id="airbagInflateGrad" cx="50%" cy="45%" r="50%">
-              <stop offset="0%" stop-color="#ffb580"/>
-              <stop offset="60%" stop-color="#f28e4f"/>
-              <stop offset="100%" stop-color="#b84c17"/>
-            </radialGradient>
-            <filter id="airbagGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#ff9b5e" flood-opacity="0.4"/>
-            </filter>
-          </defs>
-
-          <!-- Steering Column & Outer Wheel Structure -->
-          <g class="steering-wheel-group">
-            <!-- Steering Wheel Outer Rim -->
-            <circle cx="190" cy="180" r="105" stroke="rgba(248,244,234,0.4)" stroke-width="12" fill="none"/>
-            <circle cx="190" cy="180" r="105" stroke="#ff9b5e" stroke-width="2" stroke-dasharray="8 14" fill="none" opacity="0.6"/>
-            
-            <!-- Steering Spokes -->
-            <g stroke="rgba(248,244,234,0.6)" stroke-width="6" stroke-linecap="round">
-              <line x1="190" y1="180" x2="190" y2="80"/>
-              <line x1="190" y1="180" x2="105" y2="235"/>
-              <line x1="190" y1="180" x2="275" y2="235"/>
-            </g>
-            
-            <!-- Central Steering Hub Base -->
-            <circle cx="190" cy="180" r="32" fill="#191f18" stroke="#ff9b5e" stroke-width="3"/>
-          </g>
-
-          <!-- Dynamic Deployment Shockwave Ring -->
-          <circle class="airbag-shockwave" cx="190" cy="135" r="30" stroke="#ffb580" stroke-width="3" fill="none" opacity="0"/>
-
-          <!-- High-Speed Inflating Airbag Cushion -->
-          <g class="airbag-cushion-wrapper" filter="url(#airbagGlow)">
-            <ellipse class="airbag-cushion" cx="190" cy="135" rx="88" ry="78" fill="url(#airbagInflateGrad)" stroke="#ffffff" stroke-width="2.5"/>
-            <!-- Cushion Seam Details -->
-            <path class="airbag-seams" d="M130 135 Q190 105 250 135 M190 60 Q190 135 190 210" stroke="rgba(255,255,255,0.45)" stroke-width="2" stroke-linecap="round" fill="none"/>
-          </g>
-
-          <!-- Explosive Air Pressure Rays -->
-          <g class="airbag-rays" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round">
-            <line x1="90" y1="75" x2="55" y2="50"/>
-            <line x1="290" y1="75" x2="325" y2="50"/>
-            <line x1="125" y1="40" x2="100" y2="10"/>
-            <line x1="255" y1="40" x2="280" y2="10"/>
-            <line x1="75" y1="140" x2="35" y2="140"/>
-            <line x1="305" y1="140" x2="345" y2="140"/>
-          </g>
-        </svg>
+      <div class="example-panel step" data-step="2">
+        <div class="tp-label">ORDER RESPONSE</div>
+        <pre>{
+  "status": <span class="bad">"canceled"</span>,
+  "total_amount": <span class="bad">"49.99"</span>,
+  <span class="bad">"shipping_carrier": "UPS"</span>,
+  "items": [{ "sku": "SKU-1042" }]
+}</pre>
       </div>
 
-      <div class="pull step" data-step="3">A guardrail is like <span class="grad-underline">the airbag.</span></div>
-      <div class="pull-sub step" data-step="3">A hard constraint that deploys regardless of how the crash happened.</div>
+      <div class="pull step" data-step="3">The validator finds <span class="grad-underline">four facts.</span></div>
+      <div class="pull-sub step" data-step="3">Two schema failures, one enum mismatch, and one undocumented field. Next, we decide which facts need judgment and what the AI must never decide.</div>
     </section>
 
     <!-- ============ SLIDE 4 — THE VOCABULARY ============ -->
@@ -533,18 +491,18 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
 
         <div class="ledger-row step" data-step="1">
           <div class="ledger-term">Guardrail</div>
-          <div class="ledger-kitchen">The airbag itself: a constraint that has to be there and has to work, no matter what.</div>
+          <div class="ledger-kitchen">A constraint that tells the AI what it must never do, even when a prompt pressures it.</div>
           <div class="ledger-code">Guardrail #4: never declare a contract change "safe to ship"</div>
         </div>
         <div class="ledger-row step" data-step="2">
           <div class="ledger-term">Eval</div>
           <div class="ledger-kitchen">How you check the airbag: is it there, is it wired, does it actually deploy under real force.</div>
-          <div class="ledger-code">Eval 12 (refusal): does the skill actually refuse when asked to call it safe?</div>
+          <div class="ledger-code">Eval 22 (refusal): does the skill actually refuse when asked to call it safe?</div>
         </div>
         <div class="ledger-row step" data-step="3">
           <div class="ledger-term">Trial</div>
-          <div class="ledger-kitchen">One run of the crash test. It proves the airbag worked once, not that it always will.</div>
-          <div class="ledger-code">One run of eval 12. Passing once proves that run passed. Nothing about the next one.</div>
+          <div class="ledger-kitchen">One run of an eval. It proves that run followed the constraint, not that every future run will.</div>
+          <div class="ledger-code">One run of eval 22. Passing once proves that run passed. Nothing about the next one.</div>
         </div>
       </div>
 
@@ -1284,4 +1242,3 @@ const editor = new InlineEditor();
 </script>
 </body>
 </html>
-
