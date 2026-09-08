@@ -256,25 +256,28 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
 #s4 .footnote { position:absolute; top:790px; left:150px; width:1600px; font-family:var(--font-body-italic); font-style:italic; font-size:23px; line-height:1.6; color:var(--ink-soft); font-weight:500; }
 
 /* ---- INSERTED EXAMPLE SLIDE ---- */
-#s11 .lead-body { position:absolute; top:220px; left:150px; width:1080px; font-size:23px; }
-#s11 .contract-pane { position:absolute; top:325px; left:150px; width:770px; height:340px; border:1px solid var(--line); border-radius:10px; background:var(--panel-bg); padding:28px 32px; }
-#s11 .response-pane { position:absolute; top:325px; right:150px; width:770px; height:340px; border:1px solid var(--line); border-radius:10px; background:var(--panel-bg); padding:28px 32px; }
+#s11 .lead-body { position:absolute; top:195px; left:150px; width:1080px; font-size:23px; }
+#s11 .contract-pane { position:absolute; top:285px; left:150px; width:770px; height:340px; border:1px solid var(--line); border-radius:10px; background:var(--panel-bg); padding:28px 32px; }
+#s11 .response-pane { position:absolute; top:285px; right:150px; width:770px; height:340px; border:1px solid var(--line); border-radius:10px; background:var(--panel-bg); padding:28px 32px; }
 #s11 .code-label { font-family:var(--font-mono); font-size:14px; font-weight:600; letter-spacing:0.14em; color:var(--ink-faint); }
 #s11 pre { margin-top:16px; font-family:var(--font-mono); font-size:16px; line-height:1.55; color:var(--ink-soft); white-space:pre-wrap; }
 #s11 .contract-pane pre { font-size:14px; line-height:1.45; }
 #s11 .bad { color:var(--accent); }
-#s11 .drift-summary { position:absolute; top:720px; left:150px; right:150px; display:grid; grid-template-columns:repeat(4,1fr); gap:26px; }
+#s11 .drift-summary { position:absolute; top:670px; left:150px; right:150px; display:grid; grid-template-columns:repeat(4,1fr); gap:26px; }
 #s11 .drift-item { border-top:1px solid var(--line); padding-top:16px; }
 #s11 .drift-name { font-family:var(--font-display); font-size:24px; font-weight:700; color:var(--ink); }
 #s11 .drift-detail { margin-top:7px; font-family:var(--font-mono); font-size:15px; line-height:1.45; color:var(--ink-faint); }
-#s11 .tier-bridge { position:absolute; top:850px; left:150px; right:150px; display:grid; grid-template-columns:1fr 1fr; gap:58px; font-family:var(--font-mono); font-size:16px; line-height:1.5; color:var(--ink-soft); }
+#s11 .tier-bridge { position:absolute; top:790px; left:150px; right:150px; display:grid; grid-template-columns:1fr 1fr; gap:58px; font-family:var(--font-mono); font-size:16px; line-height:1.5; color:var(--ink-soft); }
 #s11 .tier-bridge > div { padding:16px 0 0 20px; border-top:1px solid var(--line); border-left:2px solid var(--accent); }
 #s11 .tier-bridge strong { color:var(--ink); }
 
 /* ---- SLIDE 5: OUR STORY ---- */
 #s5 .headline { position:absolute; top:172px; left:146px; font-size:54px; }
 #s5 .data-tag { position:absolute; top:300px; left:150px; }
-#s5 .stat-row { position:absolute; top:352px; left:150px; }
+#s5 .stat-row { position:absolute; top:340px; left:150px; gap:90px; }
+#s5 .stat-num { font-size:78px; }
+#s5 .stat-label { font-size:18px; margin-top:12px; }
+#s5 .log-body { font-size:23px; line-height:1.45; }
 #s5 .log { position:absolute; top:520px; left:150px; right:150px; bottom:150px; display:grid; grid-template-columns:repeat(4,1fr); gap:36px; }
 
 /* ---- SLIDE 6: THE PYRAMID (absorbs the receipt table) ---- */
@@ -290,8 +293,12 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
 
 /* ---- SLIDE 7: BEST PRACTICES ---- */
 #s7 .headline { position:absolute; top:172px; left:146px; font-size:54px; }
-#s7 .bp-cols { position:absolute; top:270px; left:150px; right:150px; bottom:100px; display:grid; grid-template-columns:1fr 1fr; grid-template-rows: auto 1fr 1fr 1fr; row-gap:22px; column-gap:64px; align-items:stretch; }
-#s7 .pass-explainer { font-size:21px; line-height:1.45; }
+#s7 .bp-cols { position:absolute; top:270px; left:150px; right:150px; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:auto repeat(3, 155px); row-gap:18px; column-gap:64px; align-items:stretch; }
+#s7 .skill-card { padding:18px 22px; gap:7px; }
+#s7 .skill-card .sc-name { font-size:23px; }
+#s7 .skill-card .sc-desc { font-size:18px; line-height:1.4; }
+#s7 .pass-explainer { font-size:19px; line-height:1.4; }
+#s7 .pass-note { color:var(--accent); font-style:normal; }
 .bp-col-label { font-family:var(--font-mono); font-size:16px; letter-spacing:0.2em; color:var(--ink-faint); }
 
 /* ---- SLIDE 8: LIVE DEMO ---- */
@@ -527,7 +534,7 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
       <div class="hdr-kicker reveal reveal-d1">THE EXAMPLE</div>
       <div class="hdr-page reveal reveal-d1">04 / 11</div>
       <div class="hdr-hair reveal reveal-d1"></div>
-      <div class="mn-body lead-body step" data-step="1">The validator compares the response to the schema before anyone interprets whether the change harms a client.</div>
+      <div class="mn-body lead-body step" data-step="1">The validator compares the response to the schema. Then a semantic eval asks whether the difference harms a client.</div>
 
       <div class="contract-pane step" data-step="2">
         <div class="code-label">ORDER SCHEMA · SIMPLIFIED RULES</div>
@@ -574,29 +581,29 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
       <div class="hdr-kicker reveal reveal-d1">THE VOCABULARY</div>
       <div class="hdr-page reveal reveal-d1">05 / 11</div>
       <div class="hdr-hair reveal reveal-d1"></div>
-      <div class="mn-headline headline reveal reveal-d2">One holds. One checks.</div>
+      <div class="mn-headline headline reveal reveal-d2">Three useful terms</div>
 
       <div class="ledger">
         <div class="ledger-head reveal reveal-d3"><span>TERM</span><span>WHAT IT IS</span><span>FROM THIS REPO</span></div>
 
         <div class="ledger-row step" data-step="1">
           <div class="ledger-term">Guardrail</div>
-          <div class="ledger-kitchen">The airbag itself: a constraint that has to be there and has to work, no matter what.</div>
-          <div class="ledger-code">Guardrail #4: never declare a contract change "safe to ship"</div>
+          <div class="ledger-kitchen">The safety rule. It must hold every time.</div>
+          <div class="ledger-code">Never call a change “safe to ship.”</div>
         </div>
         <div class="ledger-row step" data-step="2">
           <div class="ledger-term">Eval</div>
-          <div class="ledger-kitchen">How you check the airbag: is it there, is it wired, does it actually deploy under real force.</div>
-          <div class="ledger-code">Eval 22 (refusal): does the skill actually refuse when asked to call it safe?</div>
+          <div class="ledger-kitchen">The test for that rule.</div>
+          <div class="ledger-code">Does the assistant refuse to call it safe?</div>
         </div>
         <div class="ledger-row step" data-step="3">
           <div class="ledger-term">Trial</div>
-          <div class="ledger-kitchen">One run of an eval. It proves that run followed the constraint, not that every future run will.</div>
-          <div class="ledger-code">One run of eval 22. Passing once proves that run passed. Nothing about the next one.</div>
+          <div class="ledger-kitchen">One run of the test.</div>
+          <div class="ledger-code">A pass proves only that one run.</div>
         </div>
       </div>
 
-      <div class="footnote step" data-step="4">A guardrail is a promise.<br>An eval is how you find out if the promise was kept.<br>A trial is one time you checked.</div>
+      <div class="footnote step" data-step="4">Guardrail = promise. Eval = test. Trial = one result.</div>
     </section>
 
     <!-- ============ SLIDE 5 — OUR STORY ============ -->
@@ -788,7 +795,7 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
         </div>
         <div class="skill-card step" data-step="6">
           <div class="sc-name">3. Measure repeated runs</div>
-          <div class="sc-desc pass-explainer"><strong>pass@k</strong> means one success in <em>k</em> tries.<br><br><strong>pass^k</strong> means every run passed.<br>Guardrails need pass^k.</div>
+          <div class="sc-desc pass-explainer"><strong>pass@k</strong> = one success in <em>k</em> tries.<br><strong>pass^k</strong> = every run passes <span class="pass-note">(needed for guardrails)</span></div>
         </div>
       </div>
     </section>
