@@ -7,7 +7,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,400;1,9..144,600&family=IBM+Plex+Mono:wght@400;500;600;700&family=Newsreader:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
 /* ===========================================
@@ -26,9 +26,9 @@
     --accent-glow: rgba(255, 155, 94, 0.35);
     --accent-grad: linear-gradient(90deg, var(--accent), var(--accent-2));
 
-    --font-display: 'Fraunces', serif;
+    --font-display: 'Aptos Serif', Georgia, serif;
     --font-mono: 'IBM Plex Mono', monospace;
-    --font-body-italic: 'Newsreader', serif;
+    --font-body-italic: 'Aptos Serif', Georgia, serif;
 
     --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
     --duration-normal: 0.7s;
@@ -186,19 +186,19 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
 .pyr-card .c-desc { font-family: var(--font-mono); font-size: 14px; color: var(--ink-soft); margin-top: 2px; line-height:1.4; }
 
 /* 2-Column Split Receipt Deck */
-.receipt-deck { position:absolute; top:680px; left:140px; right:150px; display:flex; flex-direction:column; gap:10px; }
+.receipt-deck { position:absolute; top:730px; left:140px; right:150px; display:flex; flex-direction:column; gap:10px; }
 .receipt-deck-header { display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line-soft); padding-bottom:6px; }
-.rb-label { font-family:var(--font-mono); font-size:14px; font-weight:700; letter-spacing:0.2em; color:var(--accent); }
-.rb-subtitle { font-family:var(--font-mono); font-size:13px; color:var(--ink-faint); letter-spacing:0.05em; }
+.rb-label { font-family:var(--font-mono); font-size:15px; font-weight:700; letter-spacing:0.2em; color:var(--accent); }
+.rb-subtitle { font-family:var(--font-mono); font-size:15px; color:var(--ink-faint); letter-spacing:0.05em; }
 .receipt-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
 .receipt-col { background:rgba(25,31,24,0.85); border:1px solid var(--line); border-radius:8px; padding:14px 20px; display:flex; flex-direction:column; gap:6px; backdrop-filter:blur(8px); }
 .receipt-col.naive { border-left:4px solid var(--ink-faint); }
 .receipt-col.tiered { border-left:4px solid var(--accent); background:linear-gradient(90deg, rgba(255,155,94,0.1), rgba(25,31,24,0.85)); }
 .rc-header { display:flex; align-items:center; justify-content:space-between; }
-.rc-stat { font-family:var(--font-mono); font-size:15px; font-weight:600; color:var(--ink-soft); }
+.rc-stat { font-family:var(--font-mono); font-size:17px; font-weight:600; color:var(--ink-soft); }
 .rc-stat.highlight { color:#ffffff; font-weight:700; }
-.rc-badge { background:var(--accent); color:#10140f; font-size:12px; font-weight:700; padding:2px 8px; border-radius:100px; margin-left:6px; }
-.rc-body { font-family:var(--font-body-italic); font-style:italic; font-weight:400; font-size:16px; color:var(--ink-soft); line-height:1.4; }
+.rc-badge { background:var(--accent); color:#10140f; font-size:13px; font-weight:700; padding:2px 8px; border-radius:100px; margin-left:6px; }
+.rc-body { font-family:var(--font-body-italic); font-style:italic; font-weight:400; font-size:19px; color:var(--ink-soft); line-height:1.4; }
 
 /* ---- TAKEAWAY ROW ---- */
 .takeaway-row { display:flex; align-items:baseline; gap:34px; }
@@ -242,19 +242,34 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
 .agenda-row.step-current .agenda-title { color:var(--ink); }
 .agenda-row.step-current .agenda-num { color:var(--accent); }
 
-/* ---- SLIDE 3: THE EXAMPLE ---- */
+/* ---- SLIDE 3: THE ANALOGY ---- */
 #s3 .headline { position:absolute; top:172px; left:146px; width:960px; font-size:60px; line-height:1.14; }
 #s3 .lead-body { position:absolute; top:370px; left:150px; width:800px; font-size:24px; }
 #s3 .pull { position:absolute; top:570px; left:150px; width:800px; font-size:40px; font-family:var(--font-display); font-weight:700; line-height:1.2; }
 #s3 .pull-sub { position:absolute; top:720px; left:150px; width:800px; font-size:20px; color:var(--ink-soft); font-family:var(--font-mono); line-height:1.5; }
-#s3 .example-panel { position:absolute; top:285px; right:150px; width:540px; min-height:505px; border:1px solid var(--line); border-radius:10px; background:var(--panel-bg); padding:30px 34px; }
-#s3 .example-panel pre { margin-top:20px; font-family:var(--font-mono); font-size:17px; line-height:1.65; color:var(--ink-soft); white-space:pre-wrap; }
-#s3 .example-panel .bad { color:var(--accent); }
+#s3 .tp-railing { width:480px; height:480px; left:1235px; top:300px; }
+#s3 .tp-railing svg { height:390px; }
 
 /* ---- SLIDE 4: VOCABULARY ---- */
 #s4 .headline { position:absolute; top:172px; left:146px; font-size:56px; }
 #s4 .ledger { position:absolute; top:340px; left:150px; right:150px; bottom:280px; }
 #s4 .footnote { position:absolute; top:790px; left:150px; width:1600px; font-family:var(--font-body-italic); font-style:italic; font-size:23px; line-height:1.6; color:var(--ink-soft); font-weight:500; }
+
+/* ---- INSERTED EXAMPLE SLIDE ---- */
+#s11 .lead-body { position:absolute; top:220px; left:150px; width:1080px; font-size:23px; }
+#s11 .contract-pane { position:absolute; top:325px; left:150px; width:770px; height:340px; border:1px solid var(--line); border-radius:10px; background:var(--panel-bg); padding:28px 32px; }
+#s11 .response-pane { position:absolute; top:325px; right:150px; width:770px; height:340px; border:1px solid var(--line); border-radius:10px; background:var(--panel-bg); padding:28px 32px; }
+#s11 .code-label { font-family:var(--font-mono); font-size:14px; font-weight:600; letter-spacing:0.14em; color:var(--ink-faint); }
+#s11 pre { margin-top:16px; font-family:var(--font-mono); font-size:16px; line-height:1.55; color:var(--ink-soft); white-space:pre-wrap; }
+#s11 .contract-pane pre { font-size:14px; line-height:1.45; }
+#s11 .bad { color:var(--accent); }
+#s11 .drift-summary { position:absolute; top:720px; left:150px; right:150px; display:grid; grid-template-columns:repeat(4,1fr); gap:26px; }
+#s11 .drift-item { border-top:1px solid var(--line); padding-top:16px; }
+#s11 .drift-name { font-family:var(--font-display); font-size:24px; font-weight:700; color:var(--ink); }
+#s11 .drift-detail { margin-top:7px; font-family:var(--font-mono); font-size:15px; line-height:1.45; color:var(--ink-faint); }
+#s11 .tier-bridge { position:absolute; top:850px; left:150px; right:150px; display:grid; grid-template-columns:1fr 1fr; gap:58px; font-family:var(--font-mono); font-size:16px; line-height:1.5; color:var(--ink-soft); }
+#s11 .tier-bridge > div { padding:16px 0 0 20px; border-top:1px solid var(--line); border-left:2px solid var(--accent); }
+#s11 .tier-bridge strong { color:var(--ink); }
 
 /* ---- SLIDE 5: OUR STORY ---- */
 #s5 .headline { position:absolute; top:172px; left:146px; font-size:54px; }
@@ -276,6 +291,7 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
 /* ---- SLIDE 7: BEST PRACTICES ---- */
 #s7 .headline { position:absolute; top:172px; left:146px; font-size:54px; }
 #s7 .bp-cols { position:absolute; top:270px; left:150px; right:150px; bottom:100px; display:grid; grid-template-columns:1fr 1fr; grid-template-rows: auto 1fr 1fr 1fr; row-gap:22px; column-gap:64px; align-items:stretch; }
+#s7 .pass-explainer { font-size:21px; line-height:1.45; }
 .bp-col-label { font-family:var(--font-mono); font-size:16px; letter-spacing:0.2em; color:var(--ink-faint); }
 
 /* ---- SLIDE 8: LIVE DEMO ---- */
@@ -361,7 +377,7 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
     <section class="slide active mn-slide" id="s1">
       <div class="glow-soft"></div>
       <div class="kicker reveal reveal-d1">FIELD NOTES &middot; SESSION 02</div>
-      <div class="page reveal reveal-d1">01 / 10</div>
+      <div class="page reveal reveal-d1">01 / 11</div>
       <div class="hair reveal reveal-d1"></div>
 
       <div class="mn-headline headline reveal reveal-d3" contenteditable="false">Guardrails &amp; <span class="grad-underline">Evals</span>.</div>
@@ -442,47 +458,121 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
     <!-- ============ SLIDE 2 — AGENDA ============ -->
     <section class="slide mn-slide" id="s2">
       <div class="hdr-kicker reveal reveal-d1">AGENDA</div>
-      <div class="hdr-page reveal reveal-d1">02 / 10</div>
+      <div class="hdr-page reveal reveal-d1">02 / 11</div>
       <div class="hdr-hair reveal reveal-d1"></div>
       <div class="mn-headline headline reveal reveal-d2">What We'll Cover</div>
 
       <div class="agenda-list">
-        <div class="agenda-row step" data-step="1"><div class="agenda-num">01</div><div class="agenda-title">The Failure</div></div>
-        <div class="agenda-row step" data-step="2"><div class="agenda-num">02</div><div class="agenda-title">The Vocabulary</div></div>
-        <div class="agenda-row step" data-step="3"><div class="agenda-num">03</div><div class="agenda-title">Our Story</div></div>
-        <div class="agenda-row step" data-step="4"><div class="agenda-num">04</div><div class="agenda-title">The Pyramid</div></div>
-        <div class="agenda-row step" data-step="5"><div class="agenda-num">05</div><div class="agenda-title">Best Practices</div></div>
-        <div class="agenda-row step" data-step="6"><div class="agenda-num">06</div><div class="agenda-title">Live Demo</div></div>
+        <div class="agenda-row step" data-step="1"><div class="agenda-num">01</div><div class="agenda-title">The Analogy</div></div>
+        <div class="agenda-row step" data-step="2"><div class="agenda-num">02</div><div class="agenda-title">The Example</div></div>
+        <div class="agenda-row step" data-step="3"><div class="agenda-num">03</div><div class="agenda-title">The Vocabulary</div></div>
+        <div class="agenda-row step" data-step="4"><div class="agenda-num">04</div><div class="agenda-title">Our Story</div></div>
+        <div class="agenda-row step" data-step="5"><div class="agenda-num">05</div><div class="agenda-title">The Pyramid</div></div>
+        <div class="agenda-row step" data-step="6"><div class="agenda-num">06</div><div class="agenda-title">Best Practices</div></div>
+        <div class="agenda-row step" data-step="7"><div class="agenda-num">07</div><div class="agenda-title">Live Demo</div></div>
       </div>
     </section>
 
-    <!-- ============ SLIDE 3 — THE EXAMPLE ============ -->
+    <!-- ============ SLIDE 3 — THE ANALOGY ============ -->
     <section class="slide mn-slide" id="s3">
-      <div class="hdr-kicker reveal reveal-d1">THE FAILURE</div>
-      <div class="hdr-page reveal reveal-d1">03 / 10</div>
+      <div class="hdr-kicker reveal reveal-d1">THE ANALOGY</div>
+      <div class="hdr-page reveal reveal-d1">03 / 11</div>
       <div class="hdr-hair reveal reveal-d1"></div>
-      <div class="mn-headline headline reveal reveal-d2">A real response.<br>Four findings.</div>
+      <div class="mn-headline headline reveal reveal-d2">There's an airbag<br>behind every wheel.</div>
 
-      <div class="mn-body lead-body step" data-step="1">Before we discuss guardrails or evals, start with the thing we need to inspect: a captured API response that no longer matches its contract.</div>
+      <div class="mn-body lead-body step" data-step="1">It doesn't care how the crash happened: black ice, a distracted turn, a deer in the road. It just has to deploy.</div>
 
-      <div class="example-panel step" data-step="2">
-        <div class="tp-label">ORDER RESPONSE</div>
+      <div class="trail-panel tp-railing step" data-step="2">
+        <div class="tp-label">HARD SAFETY CONSTRAINT</div>
+        <svg viewBox="0 0 380 320" class="airbag-svg">
+          <defs>
+            <radialGradient id="airbagInflateGrad" cx="50%" cy="45%" r="50%">
+              <stop offset="0%" stop-color="#ffb580"/>
+              <stop offset="60%" stop-color="#f28e4f"/>
+              <stop offset="100%" stop-color="#b84c17"/>
+            </radialGradient>
+            <filter id="airbagGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#ff9b5e" flood-opacity="0.4"/>
+            </filter>
+          </defs>
+          <g class="steering-wheel-group">
+            <circle cx="190" cy="180" r="105" stroke="rgba(248,244,234,0.4)" stroke-width="12" fill="none"/>
+            <circle cx="190" cy="180" r="105" stroke="#ff9b5e" stroke-width="2" stroke-dasharray="8 14" fill="none" opacity="0.6"/>
+            <g stroke="rgba(248,244,234,0.6)" stroke-width="6" stroke-linecap="round">
+              <line x1="190" y1="180" x2="190" y2="80"/>
+              <line x1="190" y1="180" x2="105" y2="235"/>
+              <line x1="190" y1="180" x2="275" y2="235"/>
+            </g>
+            <circle cx="190" cy="180" r="32" fill="#191f18" stroke="#ff9b5e" stroke-width="3"/>
+          </g>
+          <circle class="airbag-shockwave" cx="190" cy="135" r="30" stroke="#ffb580" stroke-width="3" fill="none" opacity="0"/>
+          <g class="airbag-cushion-wrapper" filter="url(#airbagGlow)">
+            <ellipse class="airbag-cushion" cx="190" cy="135" rx="88" ry="78" fill="url(#airbagInflateGrad)" stroke="#ffffff" stroke-width="2.5"/>
+            <path class="airbag-seams" d="M130 135 Q190 105 250 135 M190 60 Q190 135 190 210" stroke="rgba(255,255,255,0.45)" stroke-width="2" stroke-linecap="round" fill="none"/>
+          </g>
+          <g class="airbag-rays" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round">
+            <line x1="90" y1="75" x2="55" y2="50"/><line x1="290" y1="75" x2="325" y2="50"/>
+            <line x1="125" y1="40" x2="100" y2="10"/><line x1="255" y1="40" x2="280" y2="10"/>
+            <line x1="75" y1="140" x2="35" y2="140"/><line x1="305" y1="140" x2="345" y2="140"/>
+          </g>
+        </svg>
+      </div>
+
+      <div class="pull step" data-step="3">A guardrail is like <span class="grad-underline">the airbag.</span></div>
+      <div class="pull-sub step" data-step="3">A hard constraint that deploys regardless of how the crash happened.</div>
+    </section>
+
+    <!-- ============ SLIDE 4 — THE EXAMPLE ============ -->
+    <section class="slide mn-slide" id="s11">
+      <div class="hdr-kicker reveal reveal-d1">THE EXAMPLE</div>
+      <div class="hdr-page reveal reveal-d1">04 / 11</div>
+      <div class="hdr-hair reveal reveal-d1"></div>
+      <div class="mn-body lead-body step" data-step="1">The validator compares the response to the schema before anyone interprets whether the change harms a client.</div>
+
+      <div class="contract-pane step" data-step="2">
+        <div class="code-label">ORDER SCHEMA · SIMPLIFIED RULES</div>
+        <pre>{
+  "required": ["status", "total_amount", "items"],
+  "properties": {
+    "status": {
+      "enum": ["pending", "confirmed", "shipped",
+               "delivered", "cancelled"]
+    },
+    "total_amount": { "type": "number" },
+    "items": {
+      "items": { "required": ["sku", "quantity", "unit_price"] }
+    }
+  }
+}</pre>
+      </div>
+
+      <div class="response-pane step" data-step="3">
+        <div class="code-label">CAPTURED ORDER RESPONSE</div>
         <pre>{
   "status": <span class="bad">"canceled"</span>,
   "total_amount": <span class="bad">"49.99"</span>,
   <span class="bad">"shipping_carrier": "UPS"</span>,
-  "items": [{ "sku": "SKU-1042" }]
+  "items": [{ "sku": "SKU-1042", "quantity": 2 }]
 }</pre>
       </div>
 
-      <div class="pull step" data-step="3">The validator finds <span class="grad-underline">four facts.</span></div>
-      <div class="pull-sub step" data-step="3">Two schema failures, one enum mismatch, and one undocumented field. Next, we decide which facts need judgment and what the AI must never decide.</div>
+      <div class="drift-summary step" data-step="4">
+        <div class="drift-item"><div class="drift-name">Type drift</div><div class="drift-detail"><code>total_amount</code> is a string, not a number</div></div>
+        <div class="drift-item"><div class="drift-name">Missing field</div><div class="drift-detail"><code>items[0].unit_price</code> is required</div></div>
+        <div class="drift-item"><div class="drift-name">Enum drift</div><div class="drift-detail"><code>canceled</code> differs from <code>cancelled</code></div></div>
+        <div class="drift-item"><div class="drift-name">Extra field</div><div class="drift-detail"><code>shipping_carrier</code> is undocumented</div></div>
+      </div>
+
+      <div class="tier-bridge step" data-step="5">
+        <div><strong>Structural tests</strong><br>Detect the wrong type, missing required field, enum mismatch, and undocumented field.</div>
+        <div><strong>Semantic evals</strong><br>Does <code>canceled</code> instead of <code>cancelled</code> break a strict client? Is <code>shipping_carrier</code> harmless or an undocumented migration?</div>
+      </div>
     </section>
 
     <!-- ============ SLIDE 4 — THE VOCABULARY ============ -->
     <section class="slide mn-slide" id="s4">
       <div class="hdr-kicker reveal reveal-d1">THE VOCABULARY</div>
-      <div class="hdr-page reveal reveal-d1">04 / 10</div>
+      <div class="hdr-page reveal reveal-d1">05 / 11</div>
       <div class="hdr-hair reveal reveal-d1"></div>
       <div class="mn-headline headline reveal reveal-d2">One holds. One checks.</div>
 
@@ -491,7 +581,7 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
 
         <div class="ledger-row step" data-step="1">
           <div class="ledger-term">Guardrail</div>
-          <div class="ledger-kitchen">A constraint that tells the AI what it must never do, even when a prompt pressures it.</div>
+          <div class="ledger-kitchen">The airbag itself: a constraint that has to be there and has to work, no matter what.</div>
           <div class="ledger-code">Guardrail #4: never declare a contract change "safe to ship"</div>
         </div>
         <div class="ledger-row step" data-step="2">
@@ -512,9 +602,9 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
     <!-- ============ SLIDE 5 — OUR STORY ============ -->
     <section class="slide mn-slide" id="s5">
       <div class="hdr-kicker reveal reveal-d1">OUR STORY</div>
-      <div class="hdr-page reveal reveal-d1">05 / 10</div>
+      <div class="hdr-page reveal reveal-d1">06 / 11</div>
       <div class="hdr-hair reveal reveal-d1"></div>
-      <div class="mn-headline headline reveal reveal-d2">Lessons we learned the hard way</div>
+      <div class="mn-headline headline reveal reveal-d2">Why we changed the evals</div>
 
       <div class="data-tag measured step" data-step="1"><span class="dot"></span>MEASURED &middot; REAL RUN</div>
 
@@ -527,19 +617,19 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
       <div class="log">
         <div class="log-entry step" data-step="2">
           <div class="log-tag">WHAT WE TRIED</div>
-          <div class="log-body">LLM executor + LLM judge, on every single eval: the same heavy machinery for every check.</div>
+          <div class="log-body">We used an LLM executor and judge for every eval.</div>
         </div>
         <div class="log-entry step" data-step="3">
           <div class="log-tag">WHERE IT BROKE</div>
-          <div class="log-body">10 evals, ~450K tokens, 22 agent invocations. This doesn't scale.</div>
+          <div class="log-body">Ten evals used about 450K tokens and 22 agent calls. That will not scale.</div>
         </div>
         <div class="log-entry step" data-step="4">
           <div class="log-tag">WHAT WE CHANGED</div>
-          <div class="log-body">Tiered the evals by what they actually need to verify, not by what's easiest to write.</div>
+          <div class="log-body">We matched each eval tier to the evidence it needs.</div>
         </div>
         <div class="log-entry step" data-step="5">
           <div class="log-tag">WHAT IT DOES NOW</div>
-          <div class="log-body">Cheap tiers run on every change. The expensive tier runs deliberately.</div>
+          <div class="log-body">Cheap checks run on every change. Expensive checks run when judgment matters.</div>
         </div>
       </div>
     </section>
@@ -547,9 +637,9 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
     <!-- ============ SLIDE 6 — THE PYRAMID ============ -->
     <section class="slide mn-slide" id="s6">
       <div class="hdr-kicker reveal reveal-d1">THE PYRAMID</div>
-      <div class="hdr-page reveal reveal-d1">06 / 10</div>
+      <div class="hdr-page reveal reveal-d1">07 / 11</div>
       <div class="hdr-hair reveal reveal-d1"></div>
-      <div class="mn-headline headline reveal reveal-d2">Same shape you already test in.</div>
+      <div class="mn-headline headline reveal reveal-d2">The eval pyramid</div>
 
       <!-- Classic True Triangle Pyramid (Aligned 1:1 with Cards) -->
       <div class="pyramid-container step" data-step="1">
@@ -616,20 +706,20 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
       <div class="pyr-annotations-cards step" data-step="1">
         <div class="pyr-card t3">
           <div class="c-tag"><span>🧠</span> SEMANTIC TIER &middot; E2E</div>
-          <div class="c-title">3 Evals (22–24) &middot; Expensive &middot; Deliberate</div>
-          <div class="c-desc">Evaluates LLM judgment: refusal guardrails, drift impact &amp; prompt injection.</div>
+          <div class="c-title">3 evals (22–24) &middot; expensive &middot; run deliberately</div>
+          <div class="c-desc">Checks judgment: release refusal, client impact, and prompt injection.</div>
         </div>
 
         <div class="pyr-card t2">
           <div class="c-tag"><span>⚙️</span> PROCESS TIER &middot; INTEGRATION</div>
-          <div class="c-title">3 Evals (19–21) &middot; Cheap ($) &middot; Every PR</div>
-          <div class="c-desc">Grades execution workflow mechanically: confirms validator is invoked before claims.</div>
+          <div class="c-title">3 evals (19–21) &middot; live executor &middot; no judge</div>
+          <div class="c-desc">Checks that the agent runs the validator before making claims.</div>
         </div>
 
         <div class="pyr-card t1">
           <div class="c-tag"><span>⚡</span> STRUCTURAL TIER &middot; UNIT</div>
-          <div class="c-title">18 Evals (1–18) &middot; Free ($0.00) &middot; Every Commit</div>
-          <div class="c-desc">Deterministic schema validation (Ajv) in 0.0s with zero LLM tokens.</div>
+          <div class="c-title">18 evals (1–18) &middot; free &middot; every commit</div>
+          <div class="c-desc">Checks schemas and fixtures with AJV. No LLM required.</div>
         </div>
       </div>
 
@@ -637,7 +727,7 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
       <div class="receipt-deck step" data-step="2">
         <div class="receipt-deck-header">
           <span class="rb-label">THE RECEIPT</span>
-          <span class="rb-subtitle">Benchmarked Cost &amp; Invocations Comparison</span>
+          <span class="rb-subtitle">Cost and agent-call comparison</span>
         </div>
         <div class="receipt-grid">
           <!-- Col 1: Naive -->
@@ -646,7 +736,7 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
               <span class="data-tag measured"><span class="dot"></span>NAIVE (ALL LLM)</span>
               <span class="rc-stat">22 Invocations &middot; ~450K Tokens</span>
             </div>
-            <div class="rc-body">LLM executor + LLM judge on every single check. Expensive, slow, and does not scale.</div>
+            <div class="rc-body">An LLM executor and judge ran for every check. The run was slow and expensive.</div>
           </div>
           <!-- Col 2: Tiered -->
           <div class="receipt-col tiered">
@@ -654,7 +744,7 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
               <span class="data-tag projected"><span class="dot"></span>TIERED ARCHITECTURE</span>
               <span class="rc-stat highlight">~6 Invocations &middot; ~60K Tokens <span class="rc-badge">87% SAVED</span></span>
             </div>
-            <div class="rc-body">Deterministic base runs free in 0.0s. LLM judge reserved deliberately for qualitative judgment.</div>
+            <div class="rc-body">The base runs free. The LLM judge handles only questions that need judgment.</div>
           </div>
         </div>
       </div>
@@ -663,9 +753,9 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
 <!-- ============ SLIDE 7 — BEST PRACTICES ============ -->
     <section class="slide mn-slide" id="s7">
       <div class="hdr-kicker reveal reveal-d1">BEST PRACTICES</div>
-      <div class="hdr-page reveal reveal-d1">07 / 10</div>
+      <div class="hdr-page reveal reveal-d1">08 / 11</div>
       <div class="hdr-hair reveal reveal-d1"></div>
-      <div class="mn-headline headline reveal reveal-d2">Writing ones worth trusting</div>
+      <div class="mn-headline headline reveal reveal-d2">Guardrails and evals people can trust</div>
 
       <div class="bp-cols">
         <div class="bp-col-label">WRITING GUARDRAILS</div>
@@ -674,31 +764,31 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
         <!-- Row 1 -->
         <div class="skill-card step" data-step="1">
           <div class="sc-name">1. Make it testable</div>
-          <div class="sc-desc">If there's no test that catches a violation, it isn't a guardrail—it's just a suggestion. Every guardrail must have a corresponding eval.</div>
+          <div class="sc-desc">A rule without a test is a suggestion. Pair every guardrail with an eval.</div>
         </div>
         <div class="skill-card step" data-step="4">
-          <div class="sc-name">1. Match cost to tier</div>
-          <div class="sc-desc">Cheap deterministic checks should run on every single commit. Heavy LLM evaluation should run deliberately where judgment is required.</div>
+          <div class="sc-name">1. Match cost to evidence</div>
+          <div class="sc-desc">Run deterministic checks on every commit. Use an LLM judge only when the answer needs judgment.</div>
         </div>
 
         <!-- Row 2 -->
         <div class="skill-card step" data-step="2">
-          <div class="sc-name">2. Base it on a real failure</div>
-          <div class="sc-desc">Write guardrails because something specific already broke in production. Don't create speculative rules without a concrete failure mode.</div>
+          <div class="sc-name">2. Use a real failure</div>
+          <div class="sc-desc">Build guardrails from failures you have seen, not hypothetical ones.</div>
         </div>
         <div class="skill-card step" data-step="5">
           <div class="sc-name">2. Include one attack attempt</div>
-          <div class="sc-desc">Someone will always try to bypass the system. Write at least one eval that tests prompt injection, jailbreaking, and adversarial pressure.</div>
+          <div class="sc-desc">Test at least one prompt injection or adversarial request.</div>
         </div>
 
         <!-- Row 3 -->
         <div class="skill-card step" data-step="3">
-          <div class="sc-name">3. Must be deterministic</div>
-          <div class="sc-desc">If the same violation sometimes triggers a block and sometimes passes, you don't have a guardrail—you have a coin flip.</div>
+          <div class="sc-name">3. Make enforcement predictable</div>
+          <div class="sc-desc">When the same violation sometimes blocks and sometimes passes, people cannot trust the rule.</div>
         </div>
         <div class="skill-card step" data-step="6">
-          <div class="sc-name">3. Know pass@k vs pass^k</div>
-          <div class="sc-desc"><strong>pass@k</strong> = at least 1 success in <em>k</em> tries (capability).<br><strong>pass^k</strong> = all <em>k</em> runs pass (reliability). For guardrails, pass@k is false confidence—you must measure pass^k.</div>
+          <div class="sc-name">3. Measure repeated runs</div>
+          <div class="sc-desc pass-explainer"><strong>pass@k</strong> means one success in <em>k</em> tries.<br><br><strong>pass^k</strong> means every run passed.<br>Guardrails need pass^k.</div>
         </div>
       </div>
     </section>
@@ -706,29 +796,29 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
     <!-- ============ SLIDE 8 — LIVE DEMO ============ -->
     <section class="slide mn-slide" id="s8">
       <div class="hdr-kicker reveal reveal-d1">LIVE DEMO</div>
-      <div class="hdr-page reveal reveal-d1">08 / 10</div>
+      <div class="hdr-page reveal reveal-d1">09 / 11</div>
       <div class="hdr-hair reveal reveal-d1"></div>
       <div class="mn-headline headline reveal reveal-d2">One skill. Three eval tiers.</div>
 
       <div class="prompt-box step" data-step="1">
-        <div class="pq">&ldquo;Run the tiered eval suite against <code>contract-drift-judge</code>: structural checks first, then process, then semantic.&rdquo;</div>
-        <div class="pn">24 Total Evals: 18 Structural (instant $0.00) &middot; 3 Process (mechanical) &middot; 3 Semantic (LLM Judge)</div>
+        <div class="pq">&ldquo;Run the <code>contract-drift-judge</code> evals: structural first, then process, then semantic.&rdquo;</div>
+        <div class="pn">24 evals: 18 structural (free) &middot; 3 process (live executor, mechanical grade) &middot; 3 semantic (LLM judge)</div>
       </div>
 
       <div class="terms">
         <div class="term-win step" data-step="2">
           <div class="term-bar">
             <div class="term-dot"></div><div class="term-dot"></div><div class="term-dot"></div>
-            <div class="term-title">tiers 1&ndash;2 &middot; mechanical (21 checks)</div>
+            <div class="term-title">structural + process &middot; 21 checks</div>
           </div>
           <div class="term-body">
-<div class="tree-line dim">structural/  (evals 1-18 · 0.0s · $0.00)</div>
+<div class="tree-line dim">structural/  (evals 1-18 · AJV · $0.00)</div>
 <div class="tree-line good">&check; evals 1-16: Order, User &amp; CatalogueItem fixtures</div>
 <div class="tree-line good">&check; evals 17-18: unsupported schema &amp; malformed JSON</div>
-<div class="tree-line dim">process/     (evals 19-21 · tool transcript)</div>
+<div class="tree-line dim">process/     (evals 19-21 · live executor · transcript)</div>
 <div class="tree-line good">&check; eval 19: validator called before any claims</div>
 <div class="tree-line good">&check; evals 20-21: no overreaction on drift</div>
-<div class="tree-line dim">// deterministic facts, zero LLM judge cost</div>
+<div class="tree-line dim">// process is mechanically graded; no judge call</div>
           </div>
         </div>
         <div class="term-win step" data-step="3">
@@ -736,7 +826,7 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
             <div class="term-dot" style="background:var(--accent-2);"></div>
             <div class="term-dot" style="background:var(--accent-2);"></div>
             <div class="term-dot" style="background:var(--accent-2);"></div>
-            <div class="term-title">tier 3 &middot; llm judge (3 evals)</div>
+            <div class="term-title">semantic &middot; LLM judge (3 evals)</div>
           </div>
           <div class="term-body">
 <div class="tree-line dim">semantic/    (evals 22-24 · structured judge)</div>
@@ -752,7 +842,7 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
     <!-- ============ SLIDE 9 — TAKEAWAYS ============ -->
     <section class="slide mn-slide" id="s9">
       <div class="hdr-kicker reveal reveal-d1">TAKEAWAYS</div>
-      <div class="hdr-page reveal reveal-d1">09 / 10</div>
+      <div class="hdr-page reveal reveal-d1">10 / 11</div>
       <div class="hdr-hair reveal reveal-d1"></div>
       <div class="mn-headline headline reveal reveal-d2">What to carry back</div>
 
@@ -761,28 +851,28 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
           <div class="takeaway-num grad-text">01</div>
           <div>
             <div class="takeaway-text">Separate facts from judgment.</div>
-            <div class="takeaway-sub">Some things can be checked. Some things have to be judged. Know which is which before you write the eval.</div>
+            <div class="takeaway-sub">Use code for facts. Use an LLM only when you need judgment.</div>
           </div>
         </div>
         <div class="takeaway-row step" data-step="2">
           <div class="takeaway-num grad-text">02</div>
           <div>
-            <div class="takeaway-text">Tier evals by what they actually need.</div>
-            <div class="takeaway-sub">Don't reach for an LLM judge when a schema check will do.</div>
+            <div class="takeaway-text">Match the eval to the evidence.</div>
+            <div class="takeaway-sub">Do not use an LLM judge when a schema check answers the question.</div>
           </div>
         </div>
         <div class="takeaway-row step" data-step="3">
           <div class="takeaway-num grad-text">03</div>
           <div>
-            <div class="takeaway-text">Test your guardrails the way an attacker actually would.</div>
-            <div class="takeaway-sub">A guardrail you've never tried to break is untested, not trustworthy.</div>
+            <div class="takeaway-text">Test guardrails under pressure.</div>
+            <div class="takeaway-sub">A guardrail you have never tried to break is still untested.</div>
           </div>
         </div>
         <div class="takeaway-row step" data-step="4">
           <div class="takeaway-num grad-text">04</div>
           <div>
             <div class="takeaway-text">Run cheap tiers on every change, expensive tier deliberately.</div>
-            <div class="takeaway-sub">The base is free. The tip is where the budget goes.</div>
+            <div class="takeaway-sub">The free base should carry most of the workload.</div>
           </div>
         </div>
       </div>
@@ -792,7 +882,7 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
     <section class="slide mn-slide" id="s10">
       <div class="glow-soft"></div>
       <div class="hdr-kicker reveal reveal-d1">END OF TRAIL</div>
-      <div class="hdr-page reveal reveal-d1">10 / 10</div>
+      <div class="hdr-page reveal reveal-d1">11 / 11</div>
 
       <div class="quote reveal reveal-d3">&ldquo;Trust isn't in the guardrail. It's in the <span class="grad-underline">eval</span> that tried to break it.&rdquo;</div>
       <div class="hair reveal reveal-d4"></div>

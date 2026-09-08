@@ -7,3 +7,5 @@ runs/
 .worktrees/
 docs
 .claude
+.vercel
+.env*

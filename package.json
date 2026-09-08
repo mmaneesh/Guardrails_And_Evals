@@ -5,6 +5,7 @@
   "description": "Judges OpenAPI/response drift: ajv for facts, an LLM only for the judgment a validator can't make. Demo material for a Ministry of Testing session on Guardrails & Evals for AI Skills.",
   "type": "module",
   "scripts": {
+    "vercel-deploy": "npx vercel deploy --prod",
     "validate": "tsx scripts/validate-schema.ts",
     "validate:selftest": "tsx scripts/selftest-validator.ts",
     "selftest:mechanical": "tsx scripts/selftest-mechanical-checks.ts",

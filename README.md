@@ -124,8 +124,15 @@ cp .env.example .env   # then fill in ANTHROPIC_API_KEY
 
 ## Running the validator standalone
 
+### Fixture names in this demo
+
+Order fixtures use descriptive names so the audience can immediately see the
+scenario being demonstrated. User and Catalogue fixtures use neutral
+`response_01.json` names. In production, use neutral names for every fixture
+so file paths do not cue the model about the expected behavior.
+
 ```bash
-npm run validate -- evals/users/schema.yaml evals/users/response_01.json --schema User
+npm run validate -- evals/schemas/users.yaml evals/responses/users/response_01.json --schema User
 ```
 
 Prints the three-bucket JSON output (`structuralViolations`,
