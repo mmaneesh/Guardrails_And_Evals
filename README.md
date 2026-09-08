@@ -164,6 +164,16 @@ npm run evals:semantic     # deliberate — tests guardrails & LLM judge
 npm run evals:all          # runs all 24 evals
 ```
 
+## Deploying the demo
+
+This demo deploys manually to Vercel, rather than through a GitHub
+connection. Review your changes first, then deploy the current local project
+to Production:
+
+```bash
+npx vercel deploy --prod
+```
+
 
 What each eval actually does depends on its tier:
 
