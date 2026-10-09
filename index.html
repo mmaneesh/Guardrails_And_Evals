@@ -458,7 +458,7 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
 
       <div class="mn-footer reveal reveal-d6">
         <div class="mn-presenter" contenteditable="false">Maneesh Maddala</div>
-        <div class="mn-meta" contenteditable="false">MINISTRY OF TESTING &middot; AI CHAPTER<br>23 SEPTEMBER 2026</div>
+        <div class="mn-meta" data-event-meta contenteditable="false">MINISTRY OF TESTING &middot; AI CHAPTER<br>23 SEPTEMBER 2026</div>
       </div>
     </section>
 
@@ -897,7 +897,7 @@ img, video, canvas, svg { max-width:100%; max-height:100%; }
 
       <div class="mn-footer reveal reveal-d6">
         <div class="mn-presenter">Maneesh Maddala</div>
-        <div class="mn-meta">MINISTRY OF TESTING &middot; AI CHAPTER<br>23 SEPTEMBER 2026</div>
+        <div class="mn-meta" data-event-meta>MINISTRY OF TESTING &middot; AI CHAPTER<br>23 SEPTEMBER 2026</div>
       </div>
     </section>
 
@@ -1336,6 +1336,27 @@ class InlineEditor {
     }
 }
 const editor = new InlineEditor();
+
+/* ===========================================
+   EVENT BRANDING
+   =========================================== */
+const EVENT_CONFIG = {
+    default: {
+        eventName: 'MINISTRY OF TESTING · AI CHAPTER',
+        date: '23 SEPTEMBER 2026'
+    },
+    'test-tribe-chicago': {
+        eventName: 'THE TEST TRIBE · CHICAGO CHAPTER',
+        date: '27 OCTOBER 2026'
+    }
+};
+
+const eventKey = new URLSearchParams(window.location.search).get('event');
+const activeEvent = EVENT_CONFIG[eventKey] || EVENT_CONFIG.default;
+
+document.querySelectorAll('[data-event-meta]').forEach((element) => {
+    element.innerHTML = `${activeEvent.eventName}<br>${activeEvent.date}`;
+});
 </script>
 </body>
 </html>
