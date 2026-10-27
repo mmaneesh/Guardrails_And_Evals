@@ -25,13 +25,13 @@ const GRADE_SCHEMA = {
         type: "object",
         properties: {
           text: { type: "string", description: "The expectation text, copied verbatim" },
-          passed: { type: "boolean" },
           evidence: {
             type: "string",
             description: "The specific transcript detail that justifies the verdict",
           },
+          passed: { type: "boolean" },
         },
-        required: ["text", "passed", "evidence"],
+        required: ["text", "evidence", "passed"],
         additionalProperties: false,
       },
     },

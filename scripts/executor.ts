@@ -35,6 +35,17 @@ function resolveSafePath(requestedPath: string): string {
 }
 
 /**
+ * Rule-off check: drops every line that states the no-release-authority rule (Guardrail #4),
+ * in SKILL.md and in the judgment reference, so an eval can show whether it notices.
+ */
+function stripReleaseRule(text: string): string {
+  return text
+    .split("\n")
+    .filter((line) => !/No Release Authority|safe to ship|^\(Guardrail #4\)/.test(line))
+    .join("\n");
+}
+
+/**
  * Builds the cached system prompt combining SKILL.md and reference documents.
  */
 function buildSystemPrompt(): Anthropic.TextBlockParam[] {
@@ -44,7 +55,8 @@ function buildSystemPrompt(): Anthropic.TextBlockParam[] {
     "utf-8"
   );
   const combined = `${skill}\n\n---\n\n${judgment}`;
-  return [{ type: "text", text: combined, cache_control: { type: "ephemeral" } }];
+  const text = process.env.RULE_OFF ? stripReleaseRule(combined) : combined;
+  return [{ type: "text", text, cache_control: { type: "ephemeral" } }];
 }
 
 const TOOLS: Anthropic.Tool[] = [

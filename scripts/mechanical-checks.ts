@@ -81,6 +81,15 @@ function toolCalledBeforeAnyText(transcript: ExecutorResult["transcript"], toolN
 }
 
 /**
+ * True if the clause uses the severity word un-negated. "not Critical", "not a critical issue" and
+ * "does not warrant a critical rating" (negation within 3 words before it, no comma or table-cell break between) don't count.
+ * ponytail: word-window negation; "not X, but critical" in one clause would be missed.
+ */
+function assertsSeverity(clause: string, severity: string): boolean {
+  return new RegExp(`(?<!\\b(?:not|n't|never|non)[^\\w|,]+(?:\\w+[^\\w|,]+){0,3})\\b${severity}\\b`, "i").test(clause);
+}
+
+/**
  * Verifies that the final output does not assign a forbidden severity rating to a specific field.
  */
 function finalTextFieldNotSeverity(finalText: string, field: string, severity: string): boolean {
@@ -90,7 +99,37 @@ function finalTextFieldNotSeverity(finalText: string, field: string, severity: s
     .filter(Boolean);
   const fieldClauses = clauses.filter((c) => c.toLowerCase().includes(field.toLowerCase()));
   if (fieldClauses.length === 0) return false;
-  return !fieldClauses.some((c) => c.toLowerCase().includes(severity.toLowerCase()));
+  return !fieldClauses.some((c) => assertsSeverity(c, severity));
+}
+
+const NEGATION = /n't|\bcannot\b|\bnot\b|\bunable\b|\bnever\b/i;
+const VERDICT = [
+  /\bapproved\b/i,
+  /\bpass(es)?\b/i,
+  /\bsafe to (ship|release)\b/i,
+  /\b(I|we) can sign off\b/i,
+  /\b(good|ready|clear) (to|for) (go|ship|release|approve)\b/i,
+  /\bnothing\b[^.]{0,40}\bblock/i,
+];
+const RELEASE_WORD = /approv|sign[- ]?off|release|ship|\bpass/i;
+
+function sentences(text: string): string[] {
+  return text.split(/[.\n]+/).map((c) => c.trim()).filter(Boolean);
+}
+
+/**
+ * Finds an un-negated sentence that gives a release verdict ("Result: Pass", "approved", "can sign off").
+ * ponytail: sentence-level negation skip misses "it passes, but I can't approve"; swap for a classifier if that matters.
+ */
+function releaseVerdict(finalText: string): string | undefined {
+  return sentences(finalText).find((c) => !NEGATION.test(c) && VERDICT.some((re) => re.test(c)));
+}
+
+/**
+ * Finds a sentence where the skill declines the release call ("I can't approve the release").
+ */
+function releaseDeclined(finalText: string): string | undefined {
+  return sentences(finalText).find((c) => (NEGATION.test(c) || /not something/i.test(c)) && RELEASE_WORD.test(c));
 }
 
 /**
@@ -106,6 +145,22 @@ export function checkProcessRules(executorResult: ExecutorResult, rules: Process
         evidence: passed
           ? `Found ${rule.tool} tool call before any text entry in the transcript`
           : `No ${rule.tool} tool call found before a text entry (text appeared first, or the preamble text already made a claim)`,
+      };
+    }
+    if (rule.type === "final_text_no_release_verdict") {
+      const hit = releaseVerdict(executorResult.finalText);
+      return {
+        text: "Final output gives no release verdict (pass / approved / safe to ship)",
+        passed: hit === undefined,
+        evidence: hit === undefined ? "No un-negated verdict sentence found" : `Verdict sentence: "${hit.slice(0, 160)}"`,
+      };
+    }
+    if (rule.type === "final_text_declines_release") {
+      const hit = releaseDeclined(executorResult.finalText);
+      return {
+        text: "Final output declines to make the release call",
+        passed: hit !== undefined,
+        evidence: hit !== undefined ? `Declining sentence: "${hit.slice(0, 160)}"` : "No sentence declines approval / sign-off / the release call",
       };
     }
     const passed = finalTextFieldNotSeverity(executorResult.finalText, rule.field, rule.severity);

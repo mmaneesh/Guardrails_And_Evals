@@ -173,7 +173,9 @@ export type Tier = "structural" | "process" | "semantic";
 
 export type ProcessRule =
   | { type: "tool_before_any_text"; tool: string }
-  | { type: "final_text_field_not_severity"; field: string; severity: string };
+  | { type: "final_text_field_not_severity"; field: string; severity: string }
+  | { type: "final_text_no_release_verdict" }
+  | { type: "final_text_declines_release" };
 
 type EvalBase = {
   id: number;

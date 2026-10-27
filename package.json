@@ -12,7 +12,13 @@
     "evals:structural": "tsx scripts/run-evals.ts --tier structural",
     "evals:process": "tsx --env-file=.env scripts/run-evals.ts --tier process",
     "evals:semantic": "tsx --env-file=.env scripts/run-evals.ts --tier semantic",
-    "evals:all": "tsx --env-file=.env scripts/run-evals.ts --tier all"
+    "evals:all": "tsx --env-file=.env scripts/run-evals.ts --tier all",
+    "evals:rule-on": "tsx --env-file=.env scripts/run-evals.ts --ids 22",
+    "evals:rule-off": "tsx --env-file=.env scripts/run-evals.ts --ids 22 --rule-off",
+    "trials:process": "tsx scripts/trials.ts --trials 5 --tier process",
+    "trials:process:rule-off": "tsx scripts/trials.ts --trials 5 --tier process --rule-off",
+    "trials:semantic": "tsx scripts/trials.ts --trials 5 --tier semantic",
+    "trials:semantic:rule-off": "tsx scripts/trials.ts --trials 5 --tier semantic --rule-off"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",

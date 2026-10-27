@@ -18,11 +18,12 @@ import {
 } from "./config.js";
 
 /**
- * Parses CLI arguments (--tier structural|process|semantic|all, --max-cost <dollars>).
+ * Parses CLI arguments (--tier structural|process|semantic|all, --max-cost <dollars>, --ids 22,26, --rule-off).
  */
-function parseArgs(argv: string[]): { tier: Tier | "all"; maxCostUsd?: number } {
+function parseArgs(argv: string[]): { tier: Tier | "all"; maxCostUsd?: number; ids?: number[] } {
   let tier: Tier | "all" = "all";
   let maxCostUsd: number | undefined;
+  let ids: number[] | undefined;
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--tier") {
       const value = argv[i + 1];
@@ -40,9 +41,14 @@ function parseArgs(argv: string[]): { tier: Tier | "all"; maxCostUsd?: number } 
       }
       maxCostUsd = value;
       i++;
+    } else if (argv[i] === "--ids") {
+      ids = (argv[i + 1] ?? "").split(",").map(Number);
+      i++;
+    } else if (argv[i] === "--rule-off") {
+      process.env.RULE_OFF = "1";
     }
   }
-  return { tier, maxCostUsd };
+  return { tier, maxCostUsd, ids };
 }
 
 function fmtUsd(n: number): string {
@@ -71,15 +77,18 @@ function printRunningTotal(usage: Usage, costUsd: number, durationMs: number): v
  * Main harness orchestrating structural, process, and semantic evaluations across tiers.
  */
 async function main() {
-  const { tier, maxCostUsd } = parseArgs(process.argv.slice(2));
+  const { tier, maxCostUsd, ids } = parseArgs(process.argv.slice(2));
 
   const evalsPath = resolve(process.cwd(), "evals/evals.json");
   const evalsFile = JSON.parse(readFileSync(evalsPath, "utf-8")) as EvalsFile;
-  const selected = evalsFile.evals.filter((e) => tier === "all" || e.tier === tier);
+  const selected = evalsFile.evals.filter(
+    (e) => (tier === "all" || e.tier === tier) && (!ids || ids.includes(e.id))
+  );
 
   console.log(`Running ${selected.length} eval(s) (tier: ${tier})`);
   console.log(`  executor model: ${EXECUTOR_MODEL}`);
   console.log(`  judge model:    ${JUDGE_MODEL}`);
+  if (process.env.RULE_OFF) console.log("  RULE OFF:       release-authority rule removed from system prompt");
   if (maxCostUsd !== undefined) {
     console.log(`  cost cap:       ${fmtUsd(maxCostUsd)}`);
   }
@@ -108,7 +117,7 @@ async function main() {
     console.log(`--- eval ${evalDef.id} (${evalDef.tier}) ---`);
     console.log(`  prompt: ${evalDef.prompt}`);
 
-    const runDir = resolve(process.cwd(), "runs", String(evalDef.id));
+    const runDir = resolve(process.cwd(), "runs", process.env.RULE_OFF ? "rule-off" : "", String(evalDef.id));
     mkdirSync(runDir, { recursive: true });
 
     if (evalDef.tier === "structural") {
